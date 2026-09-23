@@ -746,11 +746,14 @@ client's legacy `jabber:iq:auth` try after it gets an error and the connection i
 gets one login attempt and at most four frames before it is logged in, and must bind within 10 s of
 its login.
 
+The `<open to>` domain may be a hostname or the launcher's `host:port` endpoint. The latter is kept
+verbatim because 1.4.4 also uses it as the suffix in its room JIDs.
+
 **What the server answers:**
 
 | The client sends | The server |
 |:-----------------|:-----------|
-| `<presence to="Room@muc.<domain>/<nickname>">` (join) | Checks the room and the nickname. If an older connection of the same account is in the room (a reconnect while the old one lingers), it leaves first: the others get its unavailable presence, and the old connection is told nothing. Then sends the joiner every other occupant's presence, tells every other occupant about the joiner, and sends the joiner's own presence (status 110) last. Every occupant presence carries `<item jid="<account>@<domain>/<resource>">`, and every `from` is the room JID with the occupant's nickname exactly as sent. |
+| `<presence to="Room@(muc|conference).<domain>/<nickname>">` (join) | Checks the room and the nickname. If an older connection of the same account is in the room (a reconnect while the old one lingers), it leaves first: the others get its unavailable presence, and the old connection is told nothing. Then sends the joiner every other occupant's presence, tells every other occupant about the joiner, and sends the joiner's own presence (status 110) last. Every occupant presence carries `<item jid="<account>@<domain>/<resource>">`, and every `from` is the room JID with the occupant's nickname exactly as sent. |
 | `<presence type="unavailable" to="Room@...">` (leave) | The others get the leaver's unavailable presence; the leaver gets its own with status 110. |
 | `<message type="groupchat" to="Room@muc.<domain>">` | Delivered to every occupant, the sender included, from `Room@muc.<domain>/<sender's nickname>`, with the same `id`. Not to occupants who blocked the sender. |
 | `<message type="chat" to="<account>@<domain>[/<resource>]">` (whisper) | Delivered from the sender's full JID to that session, or to every session of the account. Not delivered, with no error, when the player is offline or either player blocked the other. |
@@ -771,7 +774,7 @@ unfriend or a block sends each the other's unavailable. Details: [Text chat]({{ 
 
 **Rooms.** `City-<id>`, `Hunt-<id>` and `General<id>` are open to every signed-in player,
 `Party-<partyId>` only to that party's members and `Guild-<guildId>` only to that guild's. All live on
-`muc.<domain>`. A player who left the party or guild is removed with status 307.
+`muc.<domain>` or its live-client `conference.<domain>` alias. A player who left the party or guild is removed with status 307.
 
 **Refused joins** are an error presence from the room JID, which the client handles as a failed join:
 

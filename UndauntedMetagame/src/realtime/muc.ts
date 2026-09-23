@@ -174,7 +174,13 @@ export class MucService {
     // ---- Joins and leaves ----
 
     IsMucDomain(Session: MucSession, Domain: string): boolean {
-        return Domain === `muc.${Session.Domain}`;
+        const Actual = Domain.toLowerCase();
+        const AccountDomain = Session.Domain.toLowerCase();
+
+        // 1.4.4 normally uses muc.<domain>, but live clients have also emitted the
+        // legacy conference.<domain> alias. Both identify the same authenticated
+        // room service; never accept an alias for a different account domain.
+        return Actual === `muc.${AccountDomain}` || Actual === `conference.${AccountDomain}`;
     }
 
     Join(Session: MucSession, To: Jid): void {

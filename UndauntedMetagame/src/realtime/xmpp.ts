@@ -67,6 +67,23 @@ export function IsHostName(Value: unknown): Value is string {
     return typeof Value === "string" && Value.length > 0 && Value.length <= 253 && /^[A-Za-z0-9.-]+$/.test(Value);
 }
 
+// The launcher redirects the cooked XMPP domain to its local MCP endpoint. Unlike a DNS host, that
+// value includes the metagame port (for example 127.0.0.1:61000), and the client uses it verbatim in
+// both <open to> and muc.<domain> room JIDs.
+export function IsXmppDomain(Value: unknown): Value is string {
+    if(typeof Value !== "string" || Value.length === 0 || Value.length > 259){
+        return false;
+    }
+
+    const Match = /^([A-Za-z0-9.-]+)(?::([0-9]{1,5}))?$/.exec(Value);
+
+    if(Match === null || !IsHostName(Match[1])){
+        return false;
+    }
+
+    return Match[2] === undefined || (Number(Match[2]) >= 1 && Number(Match[2]) <= 65535);
+}
+
 export type Jid = { Local: string, Domain: string, Resource: string | undefined };
 
 // local@domain/resource. The resource is everything after the first "/" and may itself hold "/", "@" and ":".

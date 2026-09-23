@@ -237,10 +237,14 @@ describe("chat listener", () => {
             assert.ok(Logs.Lines.some((Line) => Line.includes(`chat: bound c=`) && Line.includes(`uid=${C} resource=${Resource} domain=${DOMAIN} sessions=1`)));
         });
 
-        it("takes the domain from <open to>, and falls back to the game's own when it is missing or not a host name", async () => {
+        it("takes a host or launcher host:port from <open to>, and falls back when it is missing or invalid", async () => {
             const Local = await SignedIn(D, { OpenTo: "dauntless.local" });
             assert.equal(Local.Domain, "dauntless.local");
             await Local.Logout();
+
+            const Launcher = await SignedIn(D, { OpenTo: "127.0.0.1:61000" });
+            assert.equal(Launcher.Domain, "127.0.0.1:61000");
+            await Launcher.Logout();
 
             const Missing = await SignedIn(D, { OpenTo: null });
             assert.equal(Missing.Domain, DOMAIN);
@@ -723,14 +727,19 @@ describe("chat listener", () => {
             assert.ok(Logs.Lines.some((Line) => Line === `info chat: message room=${CITY} uid=${A} len=${[...Text].length} to=2`));
         });
 
-        it("rooms live on muc.<domain> from <open to>; conference. or another case is refused not-allowed", async () => {
+        it("rooms accept the 1.4.4 muc and legacy conference aliases for the authenticated domain", async () => {
             const Local = await Player(C, "Charlie", { OpenTo: "dauntless.local" });
 
             JoinAs(Local, CITY);
             await Settle(Local);
             assert.equal(Local.Model.RoomOf(CITY)!.State, JOINED, "joined on muc.dauntless.local");
 
-            for(const Domain of ["conference.dauntless.local", "MUC.dauntless.local", `muc.${DOMAIN}`]){
+            Local.Wire.Send(`<presence to="Hunt-legacy@conference.dauntless.local/${Local.Model.Nickname("Charlie")}"><x xmlns="http://jabber.org/protocol/muc"/></presence>`);
+            const [Legacy] = await Settle(Local);
+            assert.equal(Legacy.length, 1);
+            assert.match(Legacy[0], /^<presence xmlns="jabber:client" from="Hunt-legacy@conference\.dauntless\.local\//);
+
+            for(const Domain of [`conference.${DOMAIN}`, `muc.${DOMAIN}`]){
                 Local.Wire.Send(`<presence to="Hunt-1@${Domain}/${Local.Model.Nickname("Charlie")}"><x xmlns="http://jabber.org/protocol/muc"/></presence>`);
                 const [Frames] = await Settle(Local);
                 assert.equal(Frames.length, 1, Domain);

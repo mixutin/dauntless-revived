@@ -188,9 +188,11 @@ nickname from its own account id (B `0x1408b5aeb`), so only a forged nickname fa
 
 ## Rooms, and who may join them {#rooms}
 
-The client names its rooms itself (B builders in parentheses). They all live on `muc.<domain>`, where
-the domain is the one the client sent in `<open to>`; the client takes a room presence as its own only
-from exactly that domain, case included (B `0x143a379d2`).
+The client names its rooms itself (B builders in parentheses). They live on `muc.<domain>` or the
+legacy `conference.<domain>` alias, where the suffix is the value the client sent in `<open to>`.
+That value may include a port: a launcher-directed client was captured sending `127.0.0.1:61000`,
+then joining `muc.127.0.0.1:61000`. The server preserves that endpoint, accepts either alias only for
+the authenticated domain and echoes the exact room JID.
 
 | Room | Chat channel | Who may join |
 |:-----|:-------------|:-------------|
@@ -227,7 +229,7 @@ channel for everyone on the same server is a later step (roadmap 3.10).
 
 The client has an automatic kick for party members who look offline (B `0x1415f6f60`). It runs only
 while the local player's own Phoenix presence is online (B `0x1415f7562`), and it reads only that
-presence. Room presence comes from `muc.<domain>`, which the presence module leaves to the room code
+presence. Room presence comes from `muc.<domain>` (or its `conference.<domain>` alias), which the presence module leaves to the room code
 (B `0x143a381d0`). So the server keeps one rule, whatever the settings:
 
 - **By default** (`CHAT_PRESENCE` off) it sends **no presence outside chat rooms** at all: it records

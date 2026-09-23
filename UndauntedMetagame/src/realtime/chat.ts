@@ -15,7 +15,7 @@ import { ClientAddressOf, IsTrustedGatewayRequest } from "../middleware/RequestO
 import { BodyLength, JOIN_BURST, MESSAGE_BURST, MucService, NickCheckMode, RoomAccess, TakeMessageToken } from "./muc";
 import { ClientPresence, FriendPresence, PRESENCE_BURST, PresenceAccess } from "./presence";
 import {
-    AttrOf, Bucket, ChildNamed, DEFAULT_DOMAIN, EscapeXml, HasMarkupDeclaration, IsHostName, LocalName, NewBucket, NS,
+    AttrOf, Bucket, ChildNamed, DEFAULT_DOMAIN, EscapeXml, HasMarkupDeclaration, IsXmppDomain, LocalName, NewBucket, NS,
     ParseFrame, ParseJid, RedactFrame, TakeToken, TextOf
 } from "./xmpp";
 
@@ -644,7 +644,7 @@ export class ChatServer {
         if(Session.Resource === undefined){
             const To = AttrOf(Node, "to");
 
-            if(IsHostName(To)){
+            if(IsXmppDomain(To)){
                 Session.Domain = To;
             }
             else if(Session.Uid === undefined){

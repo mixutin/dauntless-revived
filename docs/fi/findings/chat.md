@@ -201,10 +201,12 @@ väärennetty nimimerkki.
 
 ## Huoneet ja kuka niihin pääsee {#rooms}
 
-Peliohjelma nimeää huoneensa itse (B: rakentajat suluissa). Ne kaikki ovat osoitteessa
-`muc.<verkkotunnus>`, jossa verkkotunnus on se, jonka peliohjelma lähetti kohdassa `<open to>`;
-peliohjelma hyväksyy huoneen läsnäolotiedon omakseen vain täsmälleen tästä verkkotunnuksesta
-kirjainkoko mukaan lukien (B `0x143a379d2`).
+Peliohjelma nimeää huoneensa itse (B: rakentajat suluissa). Ne ovat osoitteessa
+`muc.<verkkotunnus>` tai vanhassa aliasosoitteessa `conference.<verkkotunnus>`, jossa loppuosa on
+peliohjelman kohdassa `<open to>` lähettämä arvo. Arvo voi sisältää portin: käynnistimen ohjaaman
+peliohjelman havaittiin lähettävän `127.0.0.1:61000` ja liittyvän sitten osoitteeseen
+`muc.127.0.0.1:61000`. Palvelin säilyttää päätepisteen ja hyväksyy kummankin aliaksen vain tälle
+todennetulle verkkotunnukselle.
 
 | Huone | Chat-kanava | Kuka pääsee |
 |:------|:------------|:------------|
@@ -244,7 +246,7 @@ Yhteinen Ramsgate-kanava kaikille saman palvelimen pelaajille on myöhempi vaihe
 Peliohjelmassa on automaattinen potku ryhmän jäsenille, jotka näyttävät olevan poissa (B
 `0x1415f6f60`). Se toimii vain, kun paikallisen pelaajan oma Phoenix-läsnäolotieto on "paikalla" (B
 `0x1415f7562`), ja se lukee vain tätä läsnäolotietoa. Huoneiden läsnäolotiedot tulevat osoitteesta
-`muc.<verkkotunnus>`, jonka läsnäolomoduuli jättää huonekoodille (B `0x143a381d0`). Siksi palvelin
+`muc.<verkkotunnus>` (tai sen `conference.<verkkotunnus>`-aliaksesta), jonka läsnäolomoduuli jättää huonekoodille (B `0x143a381d0`). Siksi palvelin
 noudattaa yhtä sääntöä asetuksista riippumatta:
 
 - **Oletuksena** (`CHAT_PRESENCE` pois) se **ei lähetä läsnäolotietoja chat-huoneiden ulkopuolella**

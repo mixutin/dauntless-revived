@@ -783,11 +783,14 @@ tiliä tai osoitetta pidätetään); peliohjelman sen jälkeen yrittämä vanha 
 ja yhteys suljetaan. Yhteys saa yhden kirjautumisyrityksen ja enintään neljä kehystä ennen
 kirjautumista, ja sen on sitouduttava 10 sekunnissa kirjautumisesta.
 
+`<open to>` -verkkotunnus voi olla isäntänimi tai käynnistimen `isäntä:portti`-päätepiste. Jälkimmäinen
+säilytetään sellaisenaan, koska versio 1.4.4 käyttää sitä myös huoneiden JID-osoitteiden loppuosana.
+
 **Mitä palvelin vastaa:**
 
 | Peliohjelma lähettää | Palvelin |
 |:---------------------|:---------|
-| `<presence to="Huone@muc.<verkkotunnus>/<nimimerkki>">` (liittyminen) | Tarkistaa huoneen ja nimimerkin. Jos saman tilin vanhempi yhteys on huoneessa (uudelleenyhdistäminen vanhan yhteyden vielä roikkuessa), se poistuu ensin: muut saavat sen unavailable-läsnäolotiedon, eikä vanhalle yhteydelle kerrota mitään. Sitten se lähettää liittyjälle jokaisen muun huoneessa olijan läsnäolotiedon, kertoo jokaiselle muulle liittyjästä ja lähettää liittyjän oman läsnäolotiedon (tilakoodi 110) viimeisenä. Jokaisessa huoneessa olijan läsnäolotiedossa on `<item jid="<tili>@<verkkotunnus>/<resurssi>">`, ja jokainen `from` on huoneen JID ja huoneessa olijan nimimerkki täsmälleen sellaisena kuin se lähetettiin. |
+| `<presence to="Huone@(muc|conference).<verkkotunnus>/<nimimerkki>">` (liittyminen) | Tarkistaa huoneen ja nimimerkin. Jos saman tilin vanhempi yhteys on huoneessa (uudelleenyhdistäminen vanhan yhteyden vielä roikkuessa), se poistuu ensin: muut saavat sen unavailable-läsnäolotiedon, eikä vanhalle yhteydelle kerrota mitään. Sitten se lähettää liittyjälle jokaisen muun huoneessa olijan läsnäolotiedon, kertoo jokaiselle muulle liittyjästä ja lähettää liittyjän oman läsnäolotiedon (tilakoodi 110) viimeisenä. Jokaisessa huoneessa olijan läsnäolotiedossa on `<item jid="<tili>@<verkkotunnus>/<resurssi>">`, ja jokainen `from` on huoneen JID ja huoneessa olijan nimimerkki täsmälleen sellaisena kuin se lähetettiin. |
 | `<presence type="unavailable" to="Huone@...">` (poistuminen) | Muut saavat poistujan unavailable-läsnäolotiedon; poistuja saa omansa tilakoodilla 110. |
 | `<message type="groupchat" to="Huone@muc.<verkkotunnus>">` | Toimitetaan jokaiselle huoneessa olijalle lähettäjä mukaan lukien osoitteesta `Huone@muc.<verkkotunnus>/<lähettäjän nimimerkki>` samalla `id`:llä. Ei niille, jotka ovat estäneet lähettäjän. |
 | `<message type="chat" to="<tili>@<verkkotunnus>[/<resurssi>]">` (kuiskaus) | Toimitetaan lähettäjän täydestä JID:stä kyseiselle istunnolle tai tilin jokaiselle istunnolle. Ei toimiteta, eikä virhettä lähetetä, jos pelaaja ei ole paikalla tai jompikumpi on estänyt toisen. |
@@ -810,7 +813,8 @@ Yksityiskohdat: [Tekstichat]({{ chat_page.url | relative_url }}#presence).
 
 **Huoneet.** `City-<tunnus>`, `Hunt-<tunnus>` ja `General<tunnus>` ovat avoimia kaikille
 kirjautuneille pelaajille, `Party-<partyId>` vain sen ryhmän jäsenille ja `Guild-<guildId>` vain sen
-killan jäsenille. Kaikki ovat osoitteessa `muc.<verkkotunnus>`. Pelaaja, joka on lähtenyt ryhmästä tai
+killan jäsenille. Kaikki ovat osoitteessa `muc.<verkkotunnus>` tai sen live-peliohjelman
+`conference.<verkkotunnus>`-aliaksessa. Pelaaja, joka on lähtenyt ryhmästä tai
 killasta, poistetaan tilakoodilla 307.
 
 **Hylätyt liittymiset** ovat virheläsnäolotieto huoneen JID:stä, ja peliohjelma käsittelee ne
