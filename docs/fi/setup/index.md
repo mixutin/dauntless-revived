@@ -13,6 +13,7 @@ locale: fi_FI
 {% assign host_page = site.pages | where: "path", "fi/setup/host.md" | first %}
 {% assign friends_page = site.pages | where: "path", "fi/setup/friends.md" | first %}
 {% assign linux_page = site.pages | where: "path", "fi/setup/linux.md" | first %}
+{% assign steamdeck_page = site.pages | where: "path", "fi/setup/steam-deck.md" | first %}
 {% assign admin_page = site.pages | where: "path", "fi/setup/admin.md" | first %}
 {% assign trouble_page = site.pages | where: "path", "fi/setup/troubleshooting.md" | first %}
 {% assign winserver_page = site.pages | where: "path", "fi/setup/windows-server.md" | first %}
@@ -51,6 +52,7 @@ etappi on täysi kahden koneen pelitesti.
 | [Pystytä palvelin]({{ host_page.url | relative_url }}) | Palvelinta pyörittävälle | Version tarkistus, asennus lyhyeen polkuun, kahden DLL-tiedoston asennus kiinnitettyjä tiivisteitä vasten, asetustiedostot, metagamen ja deploy-palvelimen käynnistys, ensimmäisen käynnistyksen tarkistukset, peliohjelman käynnistys ja kaiken pysäyttäminen. Lopussa on yhden sivun käynnistyslista. |
 | [Liity kaverina]({{ friends_page.url | relative_url }}) | Kutsutulle pelaajalle | Tailscale, pelitiedostojen tarkistus, kahden DLL-tiedoston kopiointi, rekisteröityminen henkilökohtaista tiliavainta varten, käynnistys ja se, mikä toimii juuri nyt. |
 | [Linux-käynnistin]({{ linux_page.url | relative_url }}) | Linux-pelaajalle | Jakelukohtaiset ohjeet Ubuntulle/Debianille/Mintille/Pop!_OS:lle, Fedoralle, openSUSElle, Arch-sukuisille jakeluille, NixOS:lle, Gentoolle, Voidille sekä AppImage- ja tar-paketeille, mukaan lukien Proton/Wine. |
+| [Steam Deck]({{ steamdeck_page.url | relative_url }}) | SteamOS-pelaajalle | Natiivi Linux-käynnistin, muu kuin Steam-peli -pikakuvake, 800p-grafiikka ja kokeellinen välivideokorjaus. |
 | [Palvelin ryhmälle]({{ admin_page.url | relative_url }}) | Isännälle, kun kokonaisuus toimii jo paikallisesti | Tailscale-jako, Tailscale-liitäntään rajatut palomuurisäännöt, osoitteiden vaihtaminen, kutsukoodit ja tilit, ylläpitorajapinta, kapasiteetti ja tietokannan varmuuskopiot. Tavoitekokoonpano, jota ei ole vielä testattu alusta loppuun. |
 | [Windows-palvelin]({{ winserver_page.url | relative_url }}) | Oikeassa pelissä pisimmälle testattuun Windows-polkuun | Yhden komennon Windows Server 2019+ -asennus nykyisine varmuuskopio- ja päivitystyökaluineen. Windows-porttia ei muutettu. |
 | [Linux-palvelin]({{ linuxserver_page.url | relative_url }}) | Linux-isännälle | Natiivi Node/SQLite-ohjauspuoli, systemd, nftables sekä Dauntless 1.4.4 -peliprosessit Protonilla/Winellä. Mukana yhden koneen asennus ja erillinen Linux-pelityöntekijä. |

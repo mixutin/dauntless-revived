@@ -9,8 +9,8 @@ export type { ServerMode };
 export type Language = "en" | "fi";
 
 // -1 = leave graphics to the in-game menu, 0..4 = Low, Medium, High, Epic, Cinematic.
-export type GraphicsPreset = -1 | 0 | 1 | 2 | 3 | 4;
-export const GRAPHICS_PRESETS: readonly GraphicsPreset[] = [-1, 0, 1, 2, 3, 4];
+export type GraphicsPreset = -1 | 0 | 1 | 2 | 3 | 4 | "deck";
+export const GRAPHICS_PRESETS: readonly GraphicsPreset[] = [-1, 0, 1, 2, 3, 4, "deck"];
 export const DEFAULT_GRAPHICS: GraphicsPreset = 4;
 
 // Keep the game's scene-specific exposure by default. Basic remains adaptive
@@ -123,6 +123,7 @@ export interface Settings {
   graphics: GraphicsPreset;
   exposure: ExposureMode;
   windowed: boolean;
+  mediaCompatibility: boolean;
   language: Language;
 }
 
@@ -159,7 +160,7 @@ export interface Snapshot {
   task: TaskProgress | null;
   game: { running: boolean; relayPort: number | null };
   settings: Settings;
-  app: { version: string; packaged: boolean; updateReady: boolean };
+  app: { version: string; packaged: boolean; updateReady: boolean; platform?: NodeJS.Platform };
   status: ServerStatus | null;
   statusUnsupported: boolean; // the host answers but has no ServerStatus endpoint yet
   lastError: LauncherError | null;

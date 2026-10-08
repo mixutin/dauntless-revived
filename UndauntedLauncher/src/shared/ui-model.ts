@@ -111,7 +111,7 @@ export function kindKey(k: InstanceKind): StringKey {
 }
 
 export function graphicsKey(g: GraphicsPreset): StringKey {
-  return g < 0 ? "gfx_menu" : (`gfx_${g}` as StringKey);
+  return g === "deck" ? "gfx_deck" : g < 0 ? "gfx_menu" : (`gfx_${g}` as StringKey);
 }
 
 export function exposureKey(m: ExposureMode): StringKey {

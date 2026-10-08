@@ -136,7 +136,7 @@
     Linux-asiakasta on nyt kokeiltu Ubuntulla Protonin kautta, mutta tuki on vielä kokeellinen.
     Käynnistin 0.1.13 korjaa Wine/Proton-jumin, jossa Discord saattoi näyttää Dauntlessin käynnissä,
     vaikka peli-ikkunaa ei syntynyt, ja käynnistin hoitaa natiivin dxgi-ohituksen sekä
-    GNOME/Waylandin XWayland-valtuutuksen automaattisesti. Steam Deckiä ei ole vielä testattu.
+    GNOME/Waylandin XWayland-valtuutuksen automaattisesti. Natiivissa Linux-käynnistimessä on nyt kokeellinen Steam Deckin 1280x800-grafiikka-asetus ja peruttava videoiden yhteensopivuusvalinta (ks. [Steam Deck -ohje](fi/setup/steam-deck.md)). Oikeaa Steam Deck -pelisessiota ja välivideoita ei ole vielä vahvistettu laitteella.
     Varsinaisten Dauntless-pelipalvelinten ajaminen Wine/Protonilla on eri polku kuin Linux-pelaajan
     käynnistin; Node.js-taustapalvelu toimii jo Linuxilla, mutta pelipalvelinten Wine-polun
     live-testit ovat vielä kesken.

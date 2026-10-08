@@ -83,6 +83,7 @@ export interface Platform {
   appVersion: string;
   packaged: boolean;
   defaultLanguage: Language;
+  steamDeck?: boolean;
   encryptor: Encryptor;
   manifest: GameManifest | null;
   gameConfigDir?: string;
@@ -100,7 +101,7 @@ export interface Platform {
   emitProgress(p: TaskProgress): void;
   findTailscale(): string | null;
   findRunningClients(): Promise<number[]>;
-  prepareGameLaunch?(): Promise<{ runtime: LaunchRuntime; configDir: string; runtimeName: string } | null>;
+  prepareGameLaunch?(options: { softwareMedia: boolean }): Promise<{ runtime: LaunchRuntime; configDir: string; runtimeName: string } | null>;
   spawn?: SpawnFn;
   installUpdate?(): void;
 }
@@ -159,7 +160,7 @@ export class Controller {
   private phase: Phase = "loading";
 
   constructor(private readonly p: Platform) {
-    this.settings = new SettingsStore(p.userDataDir, p.defaultLanguage, p.hostPlatform ?? process.platform);
+    this.settings = new SettingsStore(p.userDataDir, p.defaultLanguage, p.hostPlatform ?? process.platform, p.steamDeck ?? false);
     this.keys = new KeyStore(path.join(p.userDataDir, "keys"), p.encryptor);
     this.game = new GameProcess(p.spawn);
     this.verified = new VerifiedCache(path.join(p.userDataDir, "verified-files.json"));
@@ -286,8 +287,8 @@ export class Controller {
       },
       task: this.task,
       game: { running: this.game.running, relayPort: this.relay?.port ?? null },
-      settings: { graphics: this.s.graphics, exposure: this.s.exposure, windowed: this.s.windowed, language: this.s.language, ...(this.s.huntRegion ? {huntRegion:this.s.huntRegion} : {}) },
-      app: { version: this.p.appVersion, packaged: this.p.packaged, updateReady: this.updateReady },
+      settings: { graphics: this.s.graphics, exposure: this.s.exposure, windowed: this.s.windowed, mediaCompatibility: this.s.mediaCompatibility, language: this.s.language, ...(this.s.huntRegion ? {huntRegion:this.s.huntRegion} : {}) },
+      app: { version: this.p.appVersion, packaged: this.p.packaged, updateReady: this.updateReady, platform: this.hostPlatform },
       status: this.status,
       statusUnsupported: this.statusUnsupported,
       lastError: this.lastError,
@@ -1137,7 +1138,7 @@ export class Controller {
         let prepared: { runtime: LaunchRuntime; configDir: string; runtimeName: string } | null = null;
         if (this.p.prepareGameLaunch) {
           try {
-            prepared = await this.p.prepareGameLaunch();
+            prepared = await this.p.prepareGameLaunch({ softwareMedia: this.s.mediaCompatibility });
           } catch (e) {
             log.error(`compatibility runtime preparation failed: ${describeError(e)}`);
             return this.fail("launch_failed");
@@ -1163,7 +1164,7 @@ export class Controller {
           log.error(`could not write the game config: ${describeError(e)}`);
           return this.fail("config_failed");
         }
-        const args = buildLaunchArgs({ host: gameHost, port: gamePort, key, windowed: this.s.windowed || displayRepaired });
+        const args = buildLaunchArgs({ host: gameHost, port: gamePort, key, windowed: this.s.windowed || displayRepaired, softwareMedia: this.hostPlatform === "linux" && this.s.mediaCompatibility });
         const via = prepared ? ` via ${prepared.runtimeName}` : "";
         log.info(`starting ${describeLaunch(EXE_NAME, args)}${via}${sv.mode === "public" ? ` (relay to ${sv.host}:${sv.port})` : ""}`);
         try {
@@ -1221,12 +1222,13 @@ export class Controller {
         if (GRAPHICS_PRESETS.includes(p.graphics as GraphicsPreset)) s.graphics = p.graphics as GraphicsPreset;
         if (EXPOSURE_MODES.includes(p.exposure as ExposureMode)) s.exposure = p.exposure as ExposureMode;
         if (typeof p.windowed === "boolean") s.windowed = p.windowed;
+        if (typeof p.mediaCompatibility === "boolean") s.mediaCompatibility = p.mediaCompatibility;
         if (p.huntRegion === 'main' || p.huntRegion === 'aus' || p.huntRegion === 'ger') s.huntRegion = p.huntRegion;
         if (p.language === "en" || p.language === "fi") s.language = p.language;
       });
     }
     this.publish();
-    return { graphics: this.s.graphics, exposure: this.s.exposure, windowed: this.s.windowed, language: this.s.language, ...(this.s.huntRegion ? {huntRegion:this.s.huntRegion} : {}) };
+    return { graphics: this.s.graphics, exposure: this.s.exposure, windowed: this.s.windowed, mediaCompatibility: this.s.mediaCompatibility, language: this.s.language, ...(this.s.huntRegion ? {huntRegion:this.s.huntRegion} : {}) };
   }
 
   async openExternal(target: ExternalTarget): Promise<ActionResult> {

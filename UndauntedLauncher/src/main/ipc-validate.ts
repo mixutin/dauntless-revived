@@ -14,6 +14,7 @@ export function settingsPatch(v: unknown): Partial<Settings> | null {
     if (k === "graphics" && GRAPHICS_PRESETS.includes(val as GraphicsPreset)) out.graphics = val as GraphicsPreset;
     else if (k === "exposure" && EXPOSURE_MODES.includes(val as ExposureMode)) out.exposure = val as ExposureMode;
     else if (k === "windowed" && typeof val === "boolean") out.windowed = val;
+    else if (k === "mediaCompatibility" && typeof val === "boolean") out.mediaCompatibility = val;
     else if (k === "huntRegion" && (val === 'main' || val === 'aus' || val === 'ger')) out.huntRegion = val;
     else if (k === "language" && (val === "en" || val === "fi")) out.language = val;
     else return null;

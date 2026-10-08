@@ -11,6 +11,7 @@ ref: setup/index
 {% assign host_page = site.pages | where: "path", "setup/host.md" | first %}
 {% assign friends_page = site.pages | where: "path", "setup/friends.md" | first %}
 {% assign linux_page = site.pages | where: "path", "setup/linux.md" | first %}
+{% assign steamdeck_page = site.pages | where: "path", "setup/steam-deck.md" | first %}
 {% assign admin_page = site.pages | where: "path", "setup/admin.md" | first %}
 {% assign trouble_page = site.pages | where: "path", "setup/troubleshooting.md" | first %}
 {% assign winserver_page = site.pages | where: "path", "setup/windows-server.md" | first %}
@@ -50,6 +51,7 @@ is a live two-machine game session.
 | [Host a server]({{ host_page.url | relative_url }}) | The person running the server | Verifying the build, installing it at a short path, placing the two DLLs with pinned hashes, the config files, starting the metagame and deploy server, first-boot checks, launching the client, and stopping everything. Ends with a one-page start checklist. |
 | [Join as a friend]({{ friends_page.url | relative_url }}) | An invited player | Tailscale, checking your game files, copying the two DLLs, registering for a personal account key, launching, and what works right now. |
 | [Linux launcher]({{ linux_page.url | relative_url }}) | A Linux player | Distro-by-distro launcher install instructions for Ubuntu/Debian/Mint/Pop!_OS, Fedora, openSUSE, Arch-family systems, NixOS, Gentoo, Void and universal AppImage/tarball installs, plus Proton/Wine setup. |
+| [Steam Deck]({{ steamdeck_page.url | relative_url }}) | SteamOS handheld player | Native Linux launcher, non-Steam shortcut, balanced 800p preset and experimental Linux cutscene compatibility. |
 | [Run it for a group]({{ admin_page.url | relative_url }}) | The host, once the stack runs locally | Tailscale sharing, firewall rules scoped to the Tailscale interface, switching addresses, invite codes and accounts, the admin API, capacity, and database backups. Target configuration, not yet tested end to end. |
 | [Windows server kit]({{ winserver_page.url | relative_url }}) | The host, for the live-tested Windows path | One command installs everything on Windows Server 2019+ with the current backup/update tooling. The existing Windows port is unchanged. |
 | [Linux server]({{ linuxserver_page.url | relative_url }}) | A Linux host | Native Node/SQLite control plane, systemd, nftables and Dauntless 1.4.4 game processes through Proton/Wine. Includes a one-host install and a separate Linux game-worker mode. |

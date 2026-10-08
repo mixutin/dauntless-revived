@@ -323,3 +323,53 @@ test("stored game folders stay native to the host platform", () => {
   assert.equal(linux.installDir, "/home/slayer/Games/Dauntless");
   assert.equal(linux.verifiedDir, null);
 });
+
+test("Steam Deck: 800p balanced preset keeps 16:10, real exposure and constrained texture memory", async () => {
+  const dir = tempDir();
+  try {
+    const engine = systemSettingsLines("deck");
+    assert.ok(engine.includes("r.Streaming.PoolSize=768"));
+    assert.ok(engine.includes("sg.ShadowQuality=1"));
+    assert.ok(engine.includes("sg.TextureQuality=2"));
+    assert.ok(engine.includes("sg.FoliageQuality=0"));
+    assert.ok(engine.includes("r.ScreenPercentage=85"));
+    assert.ok(!engine.some((line) => line.includes("EyeAdaptation")));
+    await applyGameConfig({ host: "127.0.0.1", graphics: "deck", configDir: dir });
+    const file = path.join(dir, "GameUserSettings.ini");
+    const first = readFileSync(file, "latin1");
+    assert.match(first, /ResolutionSizeX=1280/);
+    assert.match(first, /ResolutionSizeY=800/);
+    assert.match(first, /FullscreenMode=1/);
+    assert.match(first, /sg.ResolutionQuality=85/);
+    await applyGameConfig({ host: "127.0.0.1", graphics: "deck", configDir: dir });
+    assert.equal(readFileSync(file, "latin1"), first);
+
+    writeFileSync(file, "[/Script/Archon.ArchonGameUserSettings]\r\nResolutionSizeX=1920\r\nResolutionSizeY=1080\r\nMasterVolume=0.7\r\n[ScalabilityGroups]\r\nsg.ShadowQuality=4\r\n");
+    await applyGameConfig({ host: "127.0.0.1", graphics: "deck", configDir: dir });
+    const updated = readFileSync(file, "latin1");
+    assert.match(updated, /MasterVolume=0.7/);
+    assert.match(updated, /ResolutionSizeY=800/);
+    assert.match(updated, /sg.ShadowQuality=1/);
+    assert.equal((updated.match(/^ResolutionSizeY=/gm) ?? []).length, 1);
+    await applyGameConfig({ host: "127.0.0.1", graphics: "deck", configDir: dir });
+    assert.equal(readFileSync(file, "latin1"), updated);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("Steam Deck preset respects the explicit 720p safe-window workaround", async () => {
+  const dir = tempDir();
+  try {
+    await applyGameConfig({ host: "127.0.0.1", graphics: "deck", safeWindow: true, configDir: dir });
+    const gus = readFileSync(path.join(dir, "GameUserSettings.ini"), "latin1");
+    assert.match(gus, /ResolutionSizeY=720/);
+    assert.match(gus, /FullscreenMode=2/);
+    assert.match(gus, /sg.ResolutionQuality=85/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("Linux media workaround is opt-in at launch and never logs an account key", () => {
+  const compat = buildLaunchArgs({ host: "127.0.0.1", port: 61000, key: KEY, windowed: false, softwareMedia: true });
+  assert.ok(compat.includes("-nocefaccelpaint"));
+  assert.ok(!buildLaunchArgs({ host: "127.0.0.1", port: 61000, key: KEY, windowed: false }).includes("-nocefaccelpaint"));
+  assert.ok(!describeLaunch("game.exe", compat).includes(KEY));
+});

@@ -109,3 +109,18 @@ test("Linux runtime: creates the Proton compat-data directory before first initi
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+test("Linux cutscene mode uses Proton's documented software Media Foundation workaround", async () => {
+  const home = mkdtempSync(path.join(tmpdir(), "dr-linux-media-"));
+  try {
+    const proton = executable(path.join(home, ".local", "share", "Steam", "compatibilitytools.d", "GE-Proton11-7", "proton"));
+    const userData = path.join(home, "data");
+    mkdirSync(path.join(userData, "compat", "proton", "pfx", "drive_c"), { recursive: true });
+    const env = { HOME: home, USER: "slayer", PATH: "", DAUNTLESS_REVIVED_PROTON: proton };
+    const enabled = await prepareLinuxGameLaunch(userData, env, home, { softwareMedia: true });
+    assert.equal(enabled.runtime.env.WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER, "1");
+    const disabled = await prepareLinuxGameLaunch(userData, env, home, { softwareMedia: false });
+    assert.equal(disabled.runtime.env.WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER, undefined);
+    assert.equal(enabled.runtime.env.WINEDLLOVERRIDES, disabled.runtime.env.WINEDLLOVERRIDES);
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});

@@ -130,7 +130,7 @@
     Linux client support is experimental but now tested on Ubuntu with Proton. Launcher 0.1.13 fixes a
     Wine/Proton client-initialization deadlock that could leave Discord showing Dauntless while no game
     window appeared, and the launcher handles the native dxgi override and GNOME/Wayland XWayland
-    authorization automatically. Steam Deck has not been tested yet. Hosting the actual Dauntless game
+    authorization automatically. The native Linux launcher now includes an experimental 1280x800 Steam Deck graphics preset and a reversible video-decoding compatibility option; see the [Steam Deck guide](setup/steam-deck.md). Steam Deck gameplay and cutscenes have not yet been live-tested on hardware. Hosting the actual Dauntless game
     servers under Wine/Proton is a separate path from the Linux player launcher; the Node.js backend
     already runs on Linux, while the game-server Wine path is still being validated.
 

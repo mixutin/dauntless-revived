@@ -18,6 +18,8 @@ Dauntless Revived Launcher toimii natiivisti **x86_64-Linuxissa**. Itse Dauntles
 alkuperäinen Windowsin x86_64-versio, joten käynnistin ajaa pelin **Protonin tai Winen** kautta.
 Kutsu, tili ja palvelin ovat samat kuin Windows-pelaajilla.
 
+**Steam Deck:** Katso erillinen [Steam Deck -asennusohje, 800p-grafiikka-asetus ja videoiden yhteensopivuus](steam-deck.html). Tuki on vielä kokeellinen, eikä sitä ole testattu oikealla Deck-laitteella.
+
 Linux-paketeissa ei ole pelitiedostoja. Käynnistin lataa tai tarkistaa saman kiinnitetyn 1.4.4-version
 kuin Windowsissa, asentaa kaksi kiinnitettyä DLL-tiedostoa, luo oman yhteensopivuusprefiksin ja asettaa
 tarvittavan natiivin `dxgi`-ohituksen automaattisesti.

@@ -147,7 +147,7 @@ function snap(over: Partial<Snapshot>): Snapshot {
     install: { dir: "C:\\g", defaultDir: "C:\\g", installed: true, missingFiles: 0, verified: true, dllsOk: true, freeBytes: 5e10, requiredBytes: 1e9, totalBytes: 1e10, vcRuntimeMissing: [], contentAvailable: true },
     task: null,
     game: { running: false, relayPort: null },
-    settings: { graphics: 4, exposure: "game", windowed: false, language: "en" },
+    settings: { graphics: 4, exposure: "game", windowed: false, mediaCompatibility: false, language: "en" },
     app: { version: "0", packaged: false, updateReady: false },
     status: null,
     statusUnsupported: false,

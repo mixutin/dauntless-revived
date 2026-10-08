@@ -219,6 +219,7 @@ function wineUser(runtime: DetectedLinuxRuntime, env: NodeJS.ProcessEnv): string
 
 export interface PrepareLinuxGameLaunchOptions {
   autoInstallRuntime?: boolean;
+  softwareMedia?: boolean;
 }
 
 export async function prepareLinuxGameLaunch(
@@ -249,7 +250,7 @@ export async function prepareLinuxGameLaunch(
     runtime: {
       command: detected.command,
       argsPrefix: detected.kind === "proton" ? ["run"] : [],
-      env: detected.env,
+      env: options.softwareMedia ? { ...detected.env, WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER: "1" } : detected.env,
     },
     configDir,
     runtimeName: detected.name,

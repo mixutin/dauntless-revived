@@ -4,6 +4,8 @@ Dauntless Revived Launcher supports x86_64 Linux. The launcher itself is native 
 
 No game files are included in the Linux packages. The launcher downloads or verifies the same pinned 1.4.4 files as the Windows build.
 
+Steam Deck / SteamOS users should start with the dedicated [Steam Deck installation and compatibility guide](https://mixutin.github.io/dauntless-revived/setup/steam-deck.html). It documents the portable Linux package, adding the launcher as a non-Steam game, the 1280×800 balanced preset, and the Linux video-compatibility workaround. Steam Deck gameplay and cutscenes still need validation on real hardware.
+
 Full distro-by-distro instructions are on the project site:
 
 - [Linux launcher guide (English)](https://mixutin.github.io/dauntless-revived/setup/linux.html)

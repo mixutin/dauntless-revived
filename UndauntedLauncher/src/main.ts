@@ -14,6 +14,7 @@ import { Controller, type Platform } from "./main/controller";
 import { GAME_MANIFEST, GAME_MANIFEST_FINGERPRINT, GAME_MANIFEST_PROBLEM } from "./main/game-manifest";
 import { findRunningClients } from "./main/launch";
 import { LinuxRuntimeMissingError, prepareLinuxGameLaunch } from "./main/linux-runtime";
+import { isSteamDeck } from "./main/steam-deck";
 import {
   linuxDependencyInstallPlan,
   repairLinuxDesktopEnvironment,
@@ -357,6 +358,7 @@ function makePlatform(): Platform {
     appVersion: app.getVersion(),
     packaged: app.isPackaged,
     defaultLanguage: app.getLocale().toLowerCase().startsWith("fi") ? "fi" : "en",
+    steamDeck: process.platform === "linux" && isSteamDeck(),
     relayPort,
     encryptor: {
       isAvailable: () => safeStorage.isEncryptionAvailable(),
@@ -401,13 +403,13 @@ function makePlatform(): Platform {
     findRunningClients: () => findRunningClients(process.platform),
     prepareGameLaunch:
       process.platform === "linux"
-        ? async () => {
+        ? async ({ softwareMedia }) => {
             try {
               return await prepareLinuxGameLaunch(
                 app.getPath("userData"),
                 process.env,
                 app.getPath("home"),
-                { autoInstallRuntime: app.isPackaged },
+                { autoInstallRuntime: app.isPackaged, softwareMedia },
               );
             } catch (e) {
               if (e instanceof LinuxRuntimeMissingError) return null;

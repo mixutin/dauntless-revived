@@ -25,20 +25,22 @@ export interface StoredSettings {
   graphics: GraphicsPreset;
   exposure: ExposureMode;
   windowed: boolean;
+  mediaCompatibility: boolean;
   language: Language;
   usernames: Record<string, string>; // per server id, for display only
   backupOffered: Record<string, boolean>; // per server id: the one-time backup offer was shown
 }
 
-export function defaultSettings(language: Language): StoredSettings {
+export function defaultSettings(language: Language, platform: NodeJS.Platform = process.platform, steamDeck = false): StoredSettings {
   return {
     version: 1,
     server: null,
     installDir: null,
     verifiedDir: null,
-    graphics: DEFAULT_GRAPHICS,
+    graphics: steamDeck && platform === "linux" ? "deck" : DEFAULT_GRAPHICS,
     exposure: "game",
     windowed: false,
+    mediaCompatibility: platform === "linux",
     language,
     usernames: {},
     backupOffered: {},
@@ -56,8 +58,8 @@ function validDir(v: unknown, platform: NodeJS.Platform = process.platform): str
   return null;
 }
 
-export function sanitizeSettings(raw: unknown, language: Language, platform: NodeJS.Platform = process.platform): StoredSettings {
-  const s = defaultSettings(language);
+export function sanitizeSettings(raw: unknown, language: Language, platform: NodeJS.Platform = process.platform, steamDeck = false): StoredSettings {
+  const s = defaultSettings(language, platform, steamDeck);
   if (!isObject(raw)) return s;
   if (isObject(raw.server)) {
     const sv = raw.server;
@@ -85,6 +87,7 @@ export function sanitizeSettings(raw: unknown, language: Language, platform: Nod
   if (GRAPHICS_PRESETS.includes(raw.graphics as GraphicsPreset)) s.graphics = raw.graphics as GraphicsPreset;
   if (EXPOSURE_MODES.includes(raw.exposure as ExposureMode)) s.exposure = raw.exposure as ExposureMode;
   s.windowed = raw.windowed === true;
+  if (typeof raw.mediaCompatibility === "boolean") s.mediaCompatibility = raw.mediaCompatibility;
   if (raw.huntRegion === 'main' || raw.huntRegion === 'aus' || raw.huntRegion === 'ger') s.huntRegion = raw.huntRegion;
   if (raw.language === "en" || raw.language === "fi") s.language = raw.language;
   if (isObject(raw.usernames)) {
@@ -100,7 +103,7 @@ export class SettingsStore {
   private data: StoredSettings;
   private readonly file: string;
 
-  constructor(dir: string, language: Language, private readonly platform: NodeJS.Platform = process.platform) {
+  constructor(dir: string, language: Language, private readonly platform: NodeJS.Platform = process.platform, private readonly steamDeck = false) {
     this.file = path.join(dir, "settings.json");
     let raw: unknown = null;
     try {
@@ -108,7 +111,7 @@ export class SettingsStore {
     } catch {
       raw = null;
     }
-    this.data = sanitizeSettings(raw, language, this.platform);
+    this.data = sanitizeSettings(raw, language, this.platform, this.steamDeck);
   }
 
   get(): StoredSettings {
@@ -118,7 +121,7 @@ export class SettingsStore {
   async update(fn: (s: StoredSettings) => void): Promise<StoredSettings> {
     const copy: StoredSettings = JSON.parse(JSON.stringify(this.data));
     fn(copy);
-    this.data = sanitizeSettings(copy, copy.language, this.platform);
+    this.data = sanitizeSettings(copy, copy.language, this.platform, this.steamDeck);
     await fsp.mkdir(path.dirname(this.file), { recursive: true });
     const tmp = `${this.file}.tmp`;
     await fsp.writeFile(tmp, JSON.stringify(this.data, null, 2));

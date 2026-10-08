@@ -17,6 +17,8 @@ Dauntless Revived Launcher runs natively on **x86_64 Linux**. The actual Dauntle
 the original Windows x86_64 build, so the launcher starts it through **Proton or Wine**. You use the
 same invite, account and server as a Windows player.
 
+**Steam Deck:** Follow the dedicated [Steam Deck setup, 800p preset, and video compatibility guide](steam-deck.html). Handheld support is still experimental and has not been live-tested on a Deck.
+
 The launcher does not contain game files. It downloads or verifies the same pinned 1.4.4 files as
 the Windows build, installs the two pinned DLLs, creates a separate compatibility prefix and sets the
 required native `dxgi` override automatically.

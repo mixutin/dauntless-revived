@@ -12,6 +12,7 @@ export interface LaunchSettings {
   port: number;
   key: string;
   windowed: boolean;
+  softwareMedia?: boolean;
 }
 
 export const FIXED_ARGS = [
@@ -36,6 +37,7 @@ export function buildLaunchArgs(s: LaunchSettings): string[] {
   if (!isPlausibleAccountKey(s.key)) throw new Error("invalid key");
   // The first argument is the server address; UndauntedInternalServer.dll reads it.
   const args = [`${s.host}:${s.port}`, `-AUTH_PASSWORD=${s.key}`, ...FIXED_ARGS];
+  if (s.softwareMedia) args.push("-nocefaccelpaint");
   if (s.windowed) args.push("-windowed", "-ResX=1280", "-ResY=720");
   return args;
 }

@@ -1186,7 +1186,7 @@ function renderSettings(): void {
       if (g === snap.settings.graphics) o.selected = true;
       select.appendChild(o);
     }
-    select.addEventListener("change", () => void api.setSettings({ graphics: Number(select.value) as GraphicsPreset }));
+    select.addEventListener("change", () => void api.setSettings({ graphics: select.value === "deck" ? "deck" : Number(select.value) as GraphicsPreset }));
 
     // Auto exposure (roadmap 4.17): "game" by default; "basic" is the opt-in experiment for the airship.
     const exposure = h("select", { class: "select", id: "exposure-select", "data-fk": "exposure" });
@@ -1199,6 +1199,13 @@ function renderSettings(): void {
 
     const windowed = h("button", { type: "button", class: "switch", role: "switch", "aria-checked": snap.settings.windowed ? "true" : "false", "aria-labelledby": "windowed-label", "data-fk": "windowed" });
     windowed.addEventListener("click", () => void api.setSettings({ windowed: !snap.settings.windowed }));
+
+    const media = h("button", {
+      type: "button", class: "switch", role: "switch",
+      "aria-checked": snap.settings.mediaCompatibility ? "true" : "false",
+      "aria-labelledby": "media-compat-label", "data-fk": "media-compat",
+    });
+    media.addEventListener("click", () => void api.setSettings({ mediaCompatibility: !snap.settings.mediaCompatibility }));
 
     const huntRegion = h('select', {class:'select',id:'hunt-region','data-fk':'hunt-region'});
     for (const [value,label] of [['main','EU'],['aus','Australia (OCE)'],['ger','Germany']]) {
@@ -1230,6 +1237,10 @@ function renderSettings(): void {
       h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("label", { class: "settings-row-title", for: "gfx-select" }, t("set_graphics_level")), h("span", { class: "settings-row-sub" }, t("set_graphics_text"))), select),
       h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("label", { class: "settings-row-title", for: "exposure-select" }, t("set_exposure")), h("span", { class: "settings-row-sub" }, t("set_exposure_text"))), exposure),
       h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("span", { class: "settings-row-title", id: "windowed-label" }, t("set_windowed")), h("span", { class: "settings-row-sub" }, t("set_windowed_help"))), windowed),
+      snap.app.platform === "linux" ? h("div", { class: "settings-row" },
+        h("div", { class: "settings-row-text" },
+          h("span", { class: "settings-row-title", id: "media-compat-label" }, t("set_media_compat")),
+          h("span", { class: "settings-row-sub" }, t("set_media_compat_text"))), media) : null,
     );
 
     const langRow = h("div", { class: "lang-switch", role: "group", "aria-label": t("set_language"), style: undefined });

@@ -19,6 +19,65 @@ import { XMPP_PORT } from "./constants";
 
 export const SCALABILITY_GROUPS = ["ViewDistance", "AntiAliasing", "Shadow", "PostProcess", "Texture", "Effects", "Foliage", "Shading"];
 
+export const STEAM_DECK_QUALITY: Readonly<Record<string, number>> = {
+  ViewDistance: 2,
+  AntiAliasing: 2,
+  Shadow: 1,
+  PostProcess: 1,
+  Texture: 2,
+  Effects: 1,
+  Foliage: 0,
+  Shading: 1,
+};
+
+const DECK_RESOLUTION = [
+  ["ResolutionSizeX", "1280"],
+  ["ResolutionSizeY", "800"],
+  ["LastUserConfirmedResolutionSizeX", "1280"],
+  ["LastUserConfirmedResolutionSizeY", "800"],
+  ["DesiredScreenWidth", "1280"],
+  ["DesiredScreenHeight", "800"],
+  ["LastUserConfirmedDesiredScreenWidth", "1280"],
+  ["LastUserConfirmedDesiredScreenHeight", "800"],
+  ["FullscreenMode", "1"],
+  ["LastConfirmedFullscreenMode", "1"],
+  ["PreferredFullscreenMode", "1"],
+] as const;
+
+function upsertIniSection(lines: string[], name: string, matches: (heading: string) => boolean, pairs: readonly (readonly [string, string])[]): string[] {
+  const out: string[] = [];
+  const values = new Map(pairs.map(([key, value]) => [key.toLowerCase(), [key, value] as const]));
+  let found = false;
+  let inside = false;
+  let seen = new Set<string>();
+  const finish = () => {
+    if (inside) for (const [key, value] of values) if (!seen.has(key)) out.push(value.join("="));
+  };
+  for (const line of lines) {
+    const heading = /^\s*\[([^\]]+)\]/.exec(line);
+    if (heading) {
+      finish();
+      inside = matches(heading[1]);
+      if (inside) { found = true; seen = new Set(); }
+      out.push(line);
+      continue;
+    }
+    const key = inside ? /^\s*([^=;\s]+)\s*=/.exec(line)?.[1].toLowerCase() : undefined;
+    if (key && values.has(key)) {
+      if (!seen.has(key)) out.push(values.get(key)!.join("="));
+      seen.add(key);
+    } else {
+      out.push(line);
+    }
+  }
+  finish();
+  if (!found) {
+    if (out.length && out[out.length - 1] !== "") out.push("");
+    out.push(name, ...pairs.map(([key, value]) => key + "=" + value));
+  }
+  return out;
+}
+
 export function defaultConfigDir(env: NodeJS.ProcessEnv = process.env): string {
   const base = env.LOCALAPPDATA ?? path.join(env.USERPROFILE ?? "C:\\", "AppData", "Local");
   return path.join(base, "Archon", "Saved", "Config", "WindowsClient");
@@ -59,14 +118,15 @@ export function systemSettingsLines(graphics: GraphicsPreset, exposure: Exposure
   if (!EXPOSURE_MODES.includes(exposure)) throw new Error("invalid exposure mode");
   const sys = [
     "[SystemSettings]",
-    "r.Streaming.PoolSize=3000",
+    graphics === "deck" ? "r.Streaming.PoolSize=768" : "r.Streaming.PoolSize=3000",
     "r.Streaming.LimitPoolSizeToVRAM=1",
     "gc.TimeBetweenPurgingPendingKillObjects=10",
     "s.ForceGCAfterLevelStreamedOut=1",
   ];
-  if (graphics >= 0) {
-    for (const g of SCALABILITY_GROUPS) sys.push(`sg.${g}Quality=${graphics}`);
-    sys.push("sg.ResolutionQuality=100", "r.ScreenPercentage=100", "r.MipMapLODBias=0", "r.MaxAnisotropy=16", "r.Tonemapper.Sharpen=0.6");
+  if (graphics !== -1) {
+    for (const g of SCALABILITY_GROUPS) sys.push("sg." + g + "Quality=" + (graphics === "deck" ? STEAM_DECK_QUALITY[g] : graphics));
+    const resolution = graphics === "deck" ? 85 : 100;
+    sys.push("sg.ResolutionQuality=" + resolution, "r.ScreenPercentage=" + resolution, "r.MipMapLODBias=0", "r.MaxAnisotropy=" + (graphics === "deck" ? 8 : 16), "r.Tonemapper.Sharpen=0.6");
   }
   // The hash-pinned 1.4.4 executable's help text for this cvar: "2: Auto Basic". Unlike the old
   // EyeAdaptationQuality=0 workaround, it keeps adaptation on in dark maps. Opt-in until the airship,
@@ -95,14 +155,29 @@ export function rewriteEngineIniText(existing: string[], host: string, graphics:
   return [...systemSettingsLines(graphics, exposure), "", ...xmppLines(host, xmppPort), "", ...keep];
 }
 
-export function rewriteGameUserSettingsText(lines: string[], graphics: GraphicsPreset): string[] {
-  if (graphics < 0) return lines;
-  return lines.map((l) => {
-    for (const k of SCALABILITY_GROUPS) {
-      if (new RegExp(`^sg\\.${k}Quality=`, "i").test(l)) return `sg.${k}Quality=${graphics}`;
+export function rewriteGameUserSettingsText(lines: string[], graphics: GraphicsPreset, deckDisplay = true): string[] {
+  if (graphics === -1) return lines;
+  if (graphics !== "deck") return lines.map((line) => {
+    for (const group of SCALABILITY_GROUPS) {
+      if (new RegExp("^sg\\." + group + "Quality=", "i").test(line)) return "sg." + group + "Quality=" + graphics;
     }
-    return l;
+    return line;
   });
+
+  const quality = [
+    ...SCALABILITY_GROUPS.map((group) => ["sg." + group + "Quality", String(STEAM_DECK_QUALITY[group])] as const),
+    ["sg.ResolutionQuality", "85"] as const,
+  ];
+  let updated = upsertIniSection(lines, "[ScalabilityGroups]", (heading) => heading.toLowerCase() === "scalabilitygroups", quality);
+  if (deckDisplay) {
+    updated = upsertIniSection(
+      updated,
+      "[/Script/Archon.ArchonGameUserSettings]",
+      (heading) => /^(?:\/Script\/)?(?:Archon|Engine)\.[A-Za-z]*GameUserSettings$/i.test(heading),
+      DECK_RESOLUTION,
+    );
+  }
+  return updated;
 }
 
 async function readLines(file: string): Promise<string[] | null> {
@@ -138,12 +213,12 @@ export async function applyGameConfig(opts: ApplyConfigOptions): Promise<{ engin
   const gus = path.join(dir, "GameUserSettings.ini");
   const lines = await readLines(gus);
   let displayRepaired = false;
-  if (lines !== null || opts.safeWindow) {
+  if (lines !== null || opts.safeWindow || opts.graphics === "deck") {
     const display = repairDisplaySettings(lines ?? [], opts.safeWindow);
     displayRepaired = display.repaired;
     if (displayRepaired && lines !== null) await fsp.copyFile(gus, `${gus}.before-display-repair-${Date.now()}`);
-    const next = opts.graphics >= 0 ? rewriteGameUserSettingsText(display.lines, opts.graphics) : display.lines;
-    if (displayRepaired || opts.graphics >= 0) await writeAtomically(gus, encodeIni(next));
+    const next = opts.graphics !== -1 ? rewriteGameUserSettingsText(display.lines, opts.graphics, !opts.safeWindow) : display.lines;
+    if (displayRepaired || opts.graphics !== -1) await writeAtomically(gus, encodeIni(next));
   }
   return { engineIni: engine, displayRepaired };
 }
