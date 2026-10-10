@@ -1208,7 +1208,7 @@ function renderServer(): void {
     const saved = savedServersCard(snap);
     if (saved) parts.push(saved);
     parts.push(h("div", { class: "card-row" }, leaveLink(snap)));
-    return [h("div", { class: "page" }, ...parts)];
+    return [h("div", { class: "page page-server" }, ...parts)];
   });
 }
 
@@ -1548,7 +1548,7 @@ function renderCredits(): void {
   renderRegion(container, JSON.stringify([state.lang]), () => [
     h(
       "div",
-      { class: "page" },
+      { class: "page credits-page" },
       h("h1", { class: "page-title", id: "credits-title" }, t("credits_title")),
       h("p", { class: "page-sub" }, t("credits_intro")),
       card(

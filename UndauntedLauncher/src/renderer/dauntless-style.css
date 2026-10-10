@@ -696,3 +696,9 @@
   border-radius: 3px;
   background: linear-gradient(180deg, rgb(29 79 120 / 0.55), rgb(17 51 79 / 0.55));
 }
+
+/* The side menu's rows reach past the rail's padding to the window edge; the rail must not scroll
+   sideways because of it. */
+:root[data-style="dauntless"] .rail {
+  overflow-x: hidden;
+}

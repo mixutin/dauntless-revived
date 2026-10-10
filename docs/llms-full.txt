@@ -7547,6 +7547,8 @@ a different folder from the launcher:
 | The game folder (`-Game`, default `C:\D144\Dauntless`) | `setup.ps1` copies the two checked DLLs into `Archon\Binaries\Win64\`. |
 | `%LOCALAPPDATA%\Archon\Saved\Config\WindowsClient\` | `play.ps1` rewrites the same `Engine.ini` sections as the launcher and, with `-Graphics`, the graphics lines of `GameUserSettings.ini`. |
 
+Saved servers: `savedServers` remembers up to 20 joined servers in launcher settings; removing a saved server does not delete its account key.
+
 ================================================================================
 URL: https://mixutin.github.io/dauntless-revived/reference/game-settings.html
 ================================================================================
@@ -16951,5 +16953,3 @@ survives even if this project does not.
 
 If you hold rights in any of this and have a concern, please open an issue in
 [the repository](https://github.com/mixutin/dauntless-revived).
-
-Launcher savedServers stores up to 20 previously joined servers; removing a listing preserves its stored account key.
