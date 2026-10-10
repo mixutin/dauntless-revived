@@ -308,7 +308,7 @@ EasyAntiCheat bootstrapper. With a direct start, EasyAntiCheat never runs.
 **What to expect on screen:**
 
 - The DLL's log window stays hidden while you play. To see it when something goes wrong, turn on
-  Settings > Troubleshooting > "Show the log window" in the launcher before pressing PLAY. If you
+  Settings > Launcher > Troubleshooting > "Show the log window" in the launcher before pressing PLAY. If you
   show it, **leave it open**: closing a console window ends the process it belongs to, which here
   means the game.
 - On your first login the server creates your character, named after your username, and the game
