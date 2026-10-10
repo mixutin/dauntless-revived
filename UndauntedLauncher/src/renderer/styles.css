@@ -499,6 +499,51 @@ img {
   opacity: 1;
 }
 
+/* Streamer mode: hidden values (filler text, blurred) with an eye to show them, and the invite text
+   as dots. */
+.secret {
+  position: relative;
+}
+
+.secret-blur {
+  filter: blur(5px);
+  user-select: none;
+}
+
+/* Floats just right of the value, so showing or hiding it never moves the layout. */
+.secret-eye {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  margin-left: 4px;
+  transform: translateY(-50%);
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dr-steel);
+  cursor: pointer;
+  flex: none;
+}
+
+.secret-eye:hover {
+  color: var(--dr-frost);
+  background: color-mix(in srgb, var(--dr-deep) 70%, transparent);
+}
+
+.secret-eye .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.textarea.masked {
+  -webkit-text-security: disc;
+}
+
 .nav-badge {
   margin-left: auto;
   width: auto;
@@ -1387,7 +1432,7 @@ img {
   border-color: var(--dr-azure);
 }
 
-.page.partners-page { max-width: 960px; }
+.page.partners-page { max-width: none; }
 
 .partners-page .card-title {
   display: flex;
@@ -1412,7 +1457,7 @@ img {
 .partner-badge { color: var(--dr-glow); border: 1px solid var(--dr-azure); letter-spacing: 0.08em; font-size: 10px; }
 .partner-title { margin: 10px 0 0; font-size: 26px; font-family: var(--font-display); line-height: 1.15; }
 .partner-copy { max-width: 860px; }
-.partner-plans { margin-top: 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.partner-plans { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
 .partner-plan {
   display: grid; gap: 8px; text-align: left; padding: 18px; border: 1px solid var(--dr-steel);
   border-radius: 12px; background: var(--dr-ink); color: var(--dr-frost);
@@ -1431,7 +1476,12 @@ img {
 .partner-disclosure { margin: 12px 0 0; }
 
 /* Mods page: the same parts as the Partners page (card, badge, title, two-column grid). */
-.page.mods-page { max-width: 960px; }
+.page.mods-page { max-width: none; }
+
+/* Credits: the whole width, one section under another. */
+.page.credits-page {
+  max-width: none;
+}
 .mods-page .card-title { display: flex; align-items: center; gap: 8px; line-height: 1.25; }
 .mods-page .card-title .icon { width: 16px; height: 16px; flex: 0 0 16px; }
 .mods-page .card-text + .card-text { margin-top: 8px; }
@@ -1444,7 +1494,7 @@ img {
 .mods-badge { color: var(--dr-glow); border: 1px solid var(--dr-azure); letter-spacing: 0.08em; font-size: 10px; }
 .mods-title { margin: 10px 0 8px; font-size: 26px; font-family: var(--font-display); line-height: 1.15; }
 .mods-intro { max-width: 860px; }
-.mods-grid { margin-top: 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.mods-grid { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
 .mod-card {
   display: grid; gap: 8px; align-content: start; text-align: left; padding: 18px; border: 1px solid var(--dr-steel);
   border-radius: 12px; background: var(--dr-ink); color: var(--dr-frost);
@@ -2606,6 +2656,25 @@ img {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+/* The Server page uses the whole width: players and worlds each get a full-width card, laid out in
+   as many columns as fit, so the page needs little scrolling at any window size. */
+.page.page-server {
+  max-width: none;
+}
+
+.page-server .grid-2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.page-server .players {
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  column-gap: 8px;
+}
+
+.page-server .instances {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 
 .settings-section {

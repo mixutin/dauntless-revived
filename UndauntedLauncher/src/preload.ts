@@ -45,6 +45,7 @@ const api = {
       ...(patch.graphics !== undefined ? { graphics: patch.graphics } : {}),
       ...(patch.exposure !== undefined ? { exposure: patch.exposure } : {}),
       ...(patch.windowed !== undefined ? { windowed: patch.windowed } : {}),
+      ...(patch.streamerMode !== undefined ? { streamerMode: patch.streamerMode } : {}),
       ...(patch.showConsole !== undefined ? { showConsole: patch.showConsole } : {}),
       ...(patch.huntRegion !== undefined ? { huntRegion: patch.huntRegion } : {}),
       ...(patch.language !== undefined ? { language: patch.language } : {}),

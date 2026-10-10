@@ -26,6 +26,7 @@ export interface StoredSettings {
   graphics: GraphicsPreset;
   exposure: ExposureMode;
   windowed: boolean;
+  streamerMode: boolean; // hide addresses, fingerprints, paths and player names on screen
   language: Language;
   gameLanguage: GameLanguage;
   showConsole: boolean;
@@ -43,6 +44,7 @@ export function defaultSettings(language: Language): StoredSettings {
     graphics: DEFAULT_GRAPHICS,
     exposure: "game",
     windowed: false,
+    streamerMode: false,
     language,
     gameLanguage: "auto",
     showConsole: false,
@@ -113,6 +115,7 @@ export function sanitizeSettings(raw: unknown, language: Language, platform: Nod
   if (GRAPHICS_PRESETS.includes(raw.graphics as GraphicsPreset)) s.graphics = raw.graphics as GraphicsPreset;
   if (EXPOSURE_MODES.includes(raw.exposure as ExposureMode)) s.exposure = raw.exposure as ExposureMode;
   s.windowed = raw.windowed === true;
+  s.streamerMode = raw.streamerMode === true;
   s.showConsole = raw.showConsole === true;
   if (raw.huntRegion === 'auto' || raw.huntRegion === 'main' || raw.huntRegion === 'aus' || raw.huntRegion === 'ger') s.huntRegion = raw.huntRegion;
   if (LANGUAGES.includes(raw.language as Language)) s.language = raw.language as Language;
