@@ -259,6 +259,10 @@ export class Controller {
     return {
       phase: this.phase,
       busy: this.busy,
+      savedServers: this.s.savedServers.map((o) => {
+        const id = serverId(o.host, o.port, o.mode);
+        return { id, mode: o.mode, host: o.host, port: o.port, name: o.name, current: sid === id, username: this.s.usernames[id] ?? null };
+      }),
       server: sv
         ? {
             mode: sv.mode,
@@ -294,7 +298,7 @@ export class Controller {
       },
       task: this.task,
       game: { running: this.game.running, relayPort: this.relay?.port ?? null },
-      settings: { graphics: this.s.graphics, exposure: this.s.exposure, windowed: this.s.windowed, language: this.s.language, gameLanguage: this.s.gameLanguage, ...(this.s.huntRegion ? {huntRegion:this.s.huntRegion} : {}) },
+      settings: { graphics: this.s.graphics, exposure: this.s.exposure, windowed: this.s.windowed, language: this.s.language, gameLanguage: this.s.gameLanguage, showConsole: this.s.showConsole, ...(this.s.huntRegion ? {huntRegion:this.s.huntRegion} : {}) },
       app: { version: this.p.appVersion, packaged: this.p.packaged, updateReady: this.updateReady },
       status: this.status,
       statusUnsupported: this.statusUnsupported,
@@ -360,7 +364,7 @@ export class Controller {
     return { ok: true, certificateChanged: change !== null, previousFingerprint: change?.fp ?? null };
   }
 
-  private async certificateChange(inv: Invite): Promise<{ fp: string | null } | null> {
+  private async certificateChange(inv: Pick<Invite, "mode" | "host" | "port" | "fp">): Promise<{ fp: string | null } | null> {
     if (inv.mode !== "public") return null;
     const bound = await this.keys.certificateOf({ host: inv.host, port: inv.port, mode: "public", fp: inv.fp });
     return bound && bound.fp !== inv.fp ? bound : null;
@@ -374,7 +378,29 @@ export class Controller {
     if (this.game.running) return this.fail("already_running");
     const parsed = parseInvite(text);
     if (!parsed.ok) return this.fail("invite_invalid_format", parsed.error);
-    const inv = parsed.invite;
+    return this.join(parsed.invite, opts);
+  }
+
+  // Back to a server joined before, with what its invite said then: no invite to paste again.
+  async switchServer(id: string): Promise<ActionResult> {
+    if (this.busy || this.task) return err("busy");
+    if (this.game.running) return this.fail("already_running");
+    const saved = this.s.savedServers.find((sv) => serverId(sv.host, sv.port, sv.mode) === id);
+    if (!saved) return this.fail("invite_invalid_format");
+    return this.join({ ...saved });
+  }
+
+  async removeSavedServer(id: string): Promise<ActionResult> {
+    const cur = this.sid();
+    if (id === cur) return err("busy"); // the current server stays in the list
+    await this.settings.update((s) => {
+      s.savedServers = s.savedServers.filter((sv) => serverId(sv.host, sv.port, sv.mode) !== id);
+    });
+    this.publish();
+    return OK;
+  }
+
+  private async join(inv: Omit<Invite, "code"> & { code: string | null }, opts: { acceptNewCertificate?: boolean } = {}): Promise<ActionResult> {
     const change = await this.certificateChange(inv);
     if (change) {
       if (opts.acceptNewCertificate !== true) {
@@ -1181,7 +1207,7 @@ export class Controller {
         log.info(`starting ${describeLaunch(EXE_NAME, args)}${via}${sv.mode === "public" ? ` (relay to ${sv.host}:${sv.port})` : ""}`);
         try {
           this.endPlayingSession=()=>endPlaying(ep,key);
-          await this.game.start(win64Dir(dir), args, prepared?.runtime);
+          await this.game.start(win64Dir(dir), args, prepared?.runtime, this.s.showConsole ? { DR_SHOW_CONSOLE: "1" } : undefined);
         } catch (e) {
           this.endPlayingSession=null;
           log.error(`launch failed: ${describeError(e)}`);
@@ -1236,13 +1262,14 @@ export class Controller {
         if (GRAPHICS_PRESETS.includes(p.graphics as GraphicsPreset)) s.graphics = p.graphics as GraphicsPreset;
         if (EXPOSURE_MODES.includes(p.exposure as ExposureMode)) s.exposure = p.exposure as ExposureMode;
         if (typeof p.windowed === "boolean") s.windowed = p.windowed;
+        if (typeof p.showConsole === "boolean") s.showConsole = p.showConsole;
         if (p.huntRegion === 'auto' || p.huntRegion === 'main' || p.huntRegion === 'aus' || p.huntRegion === 'ger') s.huntRegion = p.huntRegion;
         if (LANGUAGES.includes(p.language as Language)) s.language = p.language as Language;
         if (GAME_LANGUAGES.includes(p.gameLanguage as GameLanguage)) s.gameLanguage = p.gameLanguage as GameLanguage;
       });
     }
     this.publish();
-    return { graphics: this.s.graphics, exposure: this.s.exposure, windowed: this.s.windowed, language: this.s.language, gameLanguage: this.s.gameLanguage, ...(this.s.huntRegion ? {huntRegion:this.s.huntRegion} : {}) };
+    return { graphics: this.s.graphics, exposure: this.s.exposure, windowed: this.s.windowed, language: this.s.language, gameLanguage: this.s.gameLanguage, showConsole: this.s.showConsole, ...(this.s.huntRegion ? {huntRegion:this.s.huntRegion} : {}) };
   }
 
   async openExternal(target: ExternalTarget): Promise<ActionResult> {

@@ -319,11 +319,11 @@ img {
 
 .nav-badge {
   margin-left: auto;
-  min-width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--dr-glow);
-  box-shadow: 0 0 8px var(--dr-glow);
+  width: auto;
+  height: 22px;
+  flex: none;
+  filter: drop-shadow(0 1px 3px var(--shadow));
+  pointer-events: none;
 }
 
 .rail-foot {
@@ -342,6 +342,106 @@ img {
   background: var(--dr-ink);
   border: 1px solid var(--line);
   min-height: 56px;
+}
+
+.account-chip:has(.account-switch) {
+  position: relative;
+  padding: 0;
+}
+
+.account-switch {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 28px 10px 10px;
+  border-radius: inherit;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Up and down chevrons: there is more than one server to pick from. */
+.account-switch::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--dr-steel);
+  border-bottom: 2px solid var(--dr-steel);
+  transform: translateY(-75%) rotate(45deg);
+}
+
+.account-switch[aria-expanded="true"]::after {
+  transform: translateY(-25%) rotate(-135deg);
+}
+
+.account-switch:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--dr-frost) 6%, transparent);
+}
+
+.account-switch:focus-visible {
+  outline: 2px solid var(--dr-glow);
+  outline-offset: 2px;
+}
+
+.account-switch:disabled {
+  cursor: default;
+}
+
+.server-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 20;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 10px;
+  background: var(--glass-strong);
+  border: 1px solid var(--edge);
+  box-shadow: 0 12px 30px var(--shadow);
+}
+
+.server-menu-head {
+  padding: 4px 8px 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dr-steel);
+}
+
+.server-menu-item {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.server-menu-item:hover,
+.server-menu-item:focus-visible {
+  background: var(--dr-deep);
+}
+
+.server-menu-name {
+  font-weight: 600;
+  color: var(--dr-frost);
+}
+
+.server-menu-sub {
+  font-size: 11.5px;
+  color: var(--dr-steel);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .avatar {
@@ -2382,6 +2482,89 @@ img {
 .select option {
   background: var(--dr-navy);
   color: var(--dr-frost);
+}
+
+/* The launcher's own dropdown (dropdown() in index.ts): the closed .select look on a button,
+   and a navy list with the same steel edge instead of the list Windows draws for <select>. */
+.dropdown {
+  position: relative;
+  flex: none;
+}
+
+.dropdown-button {
+  min-width: 220px;
+  color: var(--dr-frost);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dropdown-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.dropdown-button[aria-expanded="true"] {
+  border-color: var(--dr-glow);
+}
+
+.dropdown-list {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  right: 0;
+  /* As wide as the longest option (never a horizontal scroll), at least as wide as the button,
+     growing to the left: the dropdowns sit at the right edge of their rows. */
+  width: max-content;
+  min-width: 100%;
+  max-width: 420px;
+  max-height: min(360px, 60vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--glass-strong);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  box-shadow: 0 18px 40px var(--shadow);
+  backdrop-filter: blur(12px);
+  outline: none;
+}
+
+/* No white square where two scrollbars would meet. */
+.dropdown-list::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.dropdown-up .dropdown-list {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.dropdown-option {
+  padding: 8px 12px;
+  border-radius: 7px;
+  color: var(--dr-frost);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dropdown-option.active {
+  background: var(--dr-deep);
+}
+
+/* The chosen option: a soft glow aura, and the text in glow. */
+.dropdown-option[aria-selected="true"] {
+  color: var(--dr-glow);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--dr-glow) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dr-glow) 45%, transparent), 0 0 12px color-mix(in srgb, var(--dr-glow) 18%, transparent);
+}
+
+.dropdown-option[aria-selected="true"].active {
+  background: color-mix(in srgb, var(--dr-glow) 20%, var(--dr-deep));
 }
 
 /* Off: a steel knob in a steel-edged track. On: an ink knob on ice (7.31:1). */

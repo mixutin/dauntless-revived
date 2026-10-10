@@ -116,6 +116,11 @@ uses passes AA. Without a host's art pack the window shows an original night sce
 logo, drawn by `src/renderer/scene.ts`: jagged mountains with snow, a pine forest, mist, a faint
 aurora, stars, falling snow and the emblem faded into the sky.
 
+On top of it, `src/renderer/dauntless-style.css` dresses the launcher like the game's own menus:
+steel frames, the game's bevelled blue bars, a gold PLAY and a gold news marker. The colours it needs
+beyond the eight (steel greys, golds and the game's blues) are defined once there as `--dl-*` tokens;
+`styles.css` keeps using only the palette.
+
 ## Rebuilding
 
 `build.py` needs Python 3.10 or later, Pillow 9.1 or later with WebP support, `rsvg-convert`, and

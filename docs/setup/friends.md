@@ -307,8 +307,10 @@ EasyAntiCheat bootstrapper. With a direct start, EasyAntiCheat never runs.
 
 **What to expect on screen:**
 
-- A console window opens next to the game. It is the DLL's log. **Leave it open.** Closing a console
-  window ends the process it belongs to, which here means the game.
+- The DLL's log window stays hidden while you play. To see it when something goes wrong, turn on
+  Settings > Troubleshooting > "Show the log window" in the launcher before pressing PLAY. If you
+  show it, **leave it open**: closing a console window ends the process it belongs to, which here
+  means the game.
 - On your first login the server creates your character, named after your username, and the game
   sends you into the tutorial on one of the host's hunt servers. After that you arrive in Ramsgate. We
   have tested this path on the host's own account.

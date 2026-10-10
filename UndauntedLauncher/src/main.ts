@@ -297,6 +297,8 @@ function registerIpc(c: Controller): void {
   });
   handle(IPC.retryConnect, () => c.connect());
   handle(IPC.forgetServer, () => c.forgetServer());
+  handle(IPC.switchServer, (_e, id) => (typeof id === "string" && /^[0-9a-f]{24}$/.test(id) ? c.switchServer(id) : { ok: false, error: { code: "invite_invalid_format" } }));
+  handle(IPC.removeSavedServer, (_e, id) => (typeof id === "string" && /^[0-9a-f]{24}$/.test(id) ? c.removeSavedServer(id) : { ok: false, error: { code: "invite_invalid_format" } }));
   handle(IPC.register, (_e, username) => {
     const s = boundedString(username, 32);
     return s === null ? { ok: false, error: { code: "username_invalid" } } : c.register(s);

@@ -40,7 +40,7 @@ setup itself is in [Host a server]({{ host_page.url | relative_url }}). Unless a
 | `C:\dr\data\metagame.log` | One JSON line per event. The fork logs every request as `METHOD /path gs=0` (client) or `gs=1` (game server). This is the main instrument: how far did the client get, and what did it ask for last? |
 | `C:\dr\data\deploy.log` | Matchmaking requests, `Running Gameserver Watchdog!` every 60 s, `Cleaning up Gameserver on port N` when a server exits. |
 | Game-server console windows | Opened by the server DLL; they show the server's own output. Ramsgate's and the Dojo's are visible. Hunt servers are started with their window hidden. |
-| Client console window | Opened by the DLL in client mode. **If no console window appears when the client starts, the DLLs are not loaded.** |
+| Client console window | Opened by the DLL in client mode and kept hidden. To see it, turn on Settings > Troubleshooting > "Show the log window" in the launcher (it sets `DR_SHOW_CONSOLE=1` for the game). **With it on, if no console window appears when the client starts, the DLLs are not loaded.** |
 | `%LOCALAPPDATA%\Archon\Saved\Crashes\` | Crash reports. See [Crash forensics]({{ crashes_page.url | relative_url }}) for reading them. |
 | `C:\DauntlessRevived\data\logs\` (Windows server kit) | The same logs as `metagame.out.log` and `deploy.out.log`, plus the gateway's access log (`gateway.out.log`) and the supervisor's `supervisor.log`. |
 | `%APPDATA%\Dauntless Revived Launcher\logs\launcher.log` | The friend launcher: joins, connection problems, downloads and the game's command line (with the key hidden). |
@@ -501,7 +501,7 @@ Metagame lines unless marked.
 Read the metagame log from the moment you launched:
 
 - **No `POST /account/api/oauth/token` at all.** The client isn't reaching the metagame. Check that:
-  - a client console window appeared (if not, the DLLs are missing from `Win64` or aren't loading);
+  - with "Show the log window" on, a client console window appeared (if not, the DLLs are missing from `Win64` or aren't loading);
   - the first launch argument is `127.0.0.1:61000`;
   - the metagame is listening (`curl.exe -s -m 5 http://127.0.0.1:61000/dauntless-status`).
 - **`Invalid API key auth!`** The key passed as `-AUTH_PASSWORD` doesn't match any account. Check

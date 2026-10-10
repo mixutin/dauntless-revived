@@ -1,0 +1,489 @@
+/* Dauntless look: the launcher's layout, dressed like the game's own menus. Everything is drawn with
+   CSS (no game images): deep blue bevelled bars, a bright blue bar for the current choice, brushed
+   steel frames, white labels, metal-knob switches and a gold PLAY. It keeps the launcher's fonts.
+   It sits on top of styles.css and is scoped to <html data-style="dauntless">, so its rules win
+   without !important; taking the attribute off shows the previous look. The colours it adds to the
+   brand palette (steel, gold, the game's blues) are defined once below as --dl-* tokens. */
+
+:root[data-style="dauntless"] {
+  --dl-bar-top: #1d4f78;
+  --dl-bar-bottom: #11334f;
+  --dl-bar-edge: #3f6d94;
+  --dl-sel-top: #2e6c9f;
+  --dl-sel-bottom: #1b4a73;
+  --dl-sel-edge: #6f9cc4;
+  --dl-silver-hi: #8ea3b7;
+  --dl-silver-mid: #4d6277;
+  --dl-silver-lo: #26384a;
+  --dl-panel: color-mix(in srgb, #071f36 88%, transparent);
+  --dl-cyan: #6fd2df;
+  --dl-gold-hi: #ffe58a;
+  --dl-gold: #e2b440;
+  --dl-gold-lo: #a8741a;
+  --silver-line: linear-gradient(90deg, transparent, var(--dl-silver-mid) 12%, var(--dl-silver-hi) 50%, var(--dl-silver-mid) 88%, transparent);
+}
+
+/* ------------------------------------------------------------------ frame: title bar, rail, footer */
+
+:root[data-style="dauntless"] .titlebar {
+  background: linear-gradient(180deg, #0b2c4b, #061a2e);
+  border-bottom: 0;
+  box-shadow: inset 0 -2px 0 var(--dl-silver-lo), inset 0 -3px 0 var(--dl-silver-hi);
+}
+
+:root[data-style="dauntless"] .rail {
+  background: linear-gradient(180deg, #0a2a48, #051628);
+  border-right: 0;
+  box-shadow: inset -2px 0 0 var(--dl-silver-lo), inset -3px 0 0 color-mix(in srgb, var(--dl-silver-hi) 55%, transparent);
+}
+
+:root[data-style="dauntless"] .actionbar {
+  background: linear-gradient(180deg, #0c2034, #050d17);
+  border-top: 0;
+  box-shadow: inset 0 3px 0 var(--dl-silver-lo), inset 0 2px 0 var(--dl-silver-hi);
+}
+
+/* ------------------------------------------------------------------ main menu: the rail's pages */
+
+:root[data-style="dauntless"] .nav {
+  gap: 6px;
+}
+
+:root[data-style="dauntless"] .nav-item {
+  border-radius: 3px;
+  border: 1px solid var(--dl-bar-edge);
+  background: linear-gradient(180deg, var(--dl-bar-top), var(--dl-bar-bottom));
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 -3px 6px rgb(0 0 0 / 0.35);
+}
+
+:root[data-style="dauntless"] .nav-item:hover {
+  background: linear-gradient(180deg, #245b88, #143b5c);
+  color: #fff;
+}
+
+/* The current page: the game's bright blue bar with a silver edge and a chevron. */
+:root[data-style="dauntless"] .nav-item[aria-current="page"] {
+  border-color: var(--dl-sel-edge);
+  background: linear-gradient(180deg, var(--dl-sel-top), var(--dl-sel-bottom));
+  box-shadow: 0 0 0 1px #04182c, 0 0 8px color-mix(in srgb, var(--dl-sel-top) 30%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+
+:root[data-style="dauntless"] .nav-item[aria-current="page"]::before {
+  display: none;
+}
+
+:root[data-style="dauntless"] .nav-item[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border: solid var(--dl-silver-hi);
+  border-width: 3px 3px 0 0;
+  transform: translateY(-50%) rotate(45deg);
+  filter: drop-shadow(0 1px 1px #000);
+}
+
+:root[data-style="dauntless"] .nav-item .icon,
+:root[data-style="dauntless"] .nav-item[aria-current="page"] .icon {
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ panels */
+
+/* A brushed steel frame around a deep blue glass panel. */
+:root[data-style="dauntless"] .card {
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background:
+    linear-gradient(var(--dl-panel), var(--dl-panel)) padding-box,
+    linear-gradient(180deg, var(--dl-silver-hi), var(--dl-silver-mid) 30%, var(--dl-silver-lo) 70%, var(--dl-silver-mid)) border-box;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.55), inset 0 0 0 1px rgb(0 0 0 / 0.6);
+}
+
+/* Section titles with the game's steel rule under them. */
+:root[data-style="dauntless"] .card-title {
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  border-bottom: 0;
+  background: var(--silver-line) bottom / 100% 1px no-repeat;
+}
+
+:root[data-style="dauntless"] .settings-row {
+  border-color: color-mix(in srgb, var(--dl-silver-mid) 25%, transparent);
+}
+
+/* ------------------------------------------------------------------ buttons */
+
+:root[data-style="dauntless"] .btn {
+  border-radius: 3px;
+  border: 1px solid var(--dl-bar-edge);
+  background: linear-gradient(180deg, var(--dl-bar-top), var(--dl-bar-bottom));
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 -2px 5px rgb(0 0 0 / 0.35);
+}
+
+:root[data-style="dauntless"] .btn:hover:not(:disabled) {
+  border-color: var(--dl-sel-edge);
+  background: linear-gradient(180deg, var(--dl-sel-top), var(--dl-sel-bottom));
+  color: #fff;
+}
+
+:root[data-style="dauntless"] .btn:active:not(:disabled) {
+  background: linear-gradient(180deg, var(--dl-sel-bottom), var(--dl-sel-top));
+}
+
+:root[data-style="dauntless"] .btn:disabled {
+  background: #0b2238;
+  border-color: var(--dl-silver-lo);
+  color: var(--dl-silver-mid);
+  text-shadow: none;
+}
+
+:root[data-style="dauntless"] .btn-primary {
+  border-color: var(--dl-sel-edge);
+  background: linear-gradient(180deg, var(--dl-sel-top), var(--dl-sel-bottom));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--dl-sel-top) 25%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+
+/* The big button: the gold PLAY plate of the title screen. A dark bronze rim (the button itself)
+   around a gold fill (::before), glossy top half, engraved letters, angled ends. The fill colour is
+   --dl-fill, so each state only swaps the variable. */
+:root[data-style="dauntless"] .big-button {
+  --dl-fill: linear-gradient(180deg, #fff3b4 0%, #f6d266 46%, #dca535 54%, #b97d1d 100%);
+  --dl-rim: linear-gradient(180deg, #8a5a12, #4a2e05);
+  isolation: isolate;
+  border-radius: 0;
+  clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 18px 100%, 0 50%);
+  letter-spacing: 0.14em;
+  color: #3a2503;
+  text-shadow: 0 1px 0 rgb(255 240 200 / 0.65);
+  background: var(--dl-rim);
+  box-shadow: none;
+  filter: drop-shadow(0 6px 16px rgb(226 180 64 / 0.3));
+}
+
+:root[data-style="dauntless"] .big-button::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  z-index: -1;
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%);
+  background: var(--dl-fill);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7);
+  transition: filter 0.15s;
+}
+
+:root[data-style="dauntless"] .big-button:hover:not(:disabled) {
+  background: var(--dl-rim);
+  box-shadow: none;
+  filter: drop-shadow(0 6px 22px rgb(255 205 90 / 0.55));
+}
+
+:root[data-style="dauntless"] .big-button:hover:not(:disabled)::before {
+  filter: brightness(1.12) saturate(1.1);
+}
+
+:root[data-style="dauntless"] .big-button:active:not(:disabled) {
+  --dl-fill: linear-gradient(180deg, #dca535, #b97d1d);
+  background: var(--dl-rim);
+  color: #2a1a02;
+}
+
+:root[data-style="dauntless"] .big-button:disabled {
+  --dl-fill: linear-gradient(180deg, #3a4652, #222b34);
+  --dl-rim: linear-gradient(180deg, #4d5966, #1a2229);
+  background: var(--dl-rim);
+  color: var(--dl-silver-hi);
+  text-shadow: 0 1px 2px #000;
+  box-shadow: none;
+  filter: none;
+}
+
+:root[data-style="dauntless"] .big-button.is-running,
+:root[data-style="dauntless"] .big-button.is-running:disabled {
+  --dl-fill: linear-gradient(180deg, #4c86b8 0%, var(--dl-sel-top) 46%, #22578a 54%, var(--dl-sel-bottom) 100%);
+  --dl-rim: linear-gradient(180deg, #6f9cc4, #0c2840);
+  background: var(--dl-rim);
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+  box-shadow: none;
+}
+
+:root[data-style="dauntless"] .big-button.is-pause {
+  --dl-fill: linear-gradient(180deg, var(--dl-bar-top), var(--dl-bar-bottom));
+  --dl-rim: linear-gradient(180deg, #5d93c0, #0a2a48);
+  background: var(--dl-rim);
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+
+/* Ready: a soft light breathing inside the plate (a ring would be cut by the angled ends). */
+:root[data-style="dauntless"] .big-button.is-ready::after {
+  inset: 3px;
+  border-radius: 0;
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%);
+  box-shadow: inset 0 0 18px rgb(255 255 255 / 0.65);
+}
+
+/* ------------------------------------------------------------------ switches, inputs, choices */
+
+/* Switch: a cyan track when on, a metal knob with a dark centre. */
+:root[data-style="dauntless"] .switch {
+  border: 1px solid #000;
+  background: #20262c;
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
+}
+
+:root[data-style="dauntless"] .switch::after {
+  top: 1px;
+  left: 1px;
+  width: 22px;
+  height: 22px;
+  background:
+    radial-gradient(circle, #0c1218 0 3px, #2b3640 3.5px 5px, transparent 5.5px),
+    radial-gradient(circle at 35% 30%, #f3f6f8, #9aa6b1 55%, #4a5560);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.7), inset 0 0 0 1px rgb(0 0 0 / 0.55);
+}
+
+:root[data-style="dauntless"] .switch[aria-checked="true"] {
+  background: linear-gradient(180deg, #9be3ec, var(--dl-cyan) 60%, #3aa6b5);
+  border-color: #000;
+}
+
+:root[data-style="dauntless"] .switch[aria-checked="true"]::after {
+  transform: translateX(22px);
+  background:
+    radial-gradient(circle, #0c1218 0 3px, var(--dl-cyan) 3.5px 5px, transparent 5.5px),
+    radial-gradient(circle at 35% 30%, #f3f6f8, #9aa6b1 55%, #4a5560);
+}
+
+:root[data-style="dauntless"] .input,
+:root[data-style="dauntless"] .textarea,
+:root[data-style="dauntless"] .select {
+  border-radius: 3px;
+  border-color: var(--dl-silver-lo);
+  background-color: #040f1a;
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.6);
+}
+
+:root[data-style="dauntless"] .input:focus,
+:root[data-style="dauntless"] .textarea:focus,
+:root[data-style="dauntless"] .select:focus {
+  border-color: var(--dl-sel-edge);
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.6), 0 0 0 2px color-mix(in srgb, var(--dl-sel-top) 55%, transparent);
+}
+
+/* The dropdown list and the language tabs: bars like the game's menus. */
+:root[data-style="dauntless"] .dropdown-list {
+  border-radius: 3px;
+  border-color: var(--dl-silver-mid);
+  background: #061a2d;
+}
+
+:root[data-style="dauntless"] .dropdown-option {
+  border-radius: 2px;
+}
+
+:root[data-style="dauntless"] .dropdown-option.active {
+  background: linear-gradient(180deg, var(--dl-bar-top), var(--dl-bar-bottom));
+}
+
+:root[data-style="dauntless"] .dropdown-option[aria-selected="true"] {
+  color: #fff;
+  background: linear-gradient(180deg, var(--dl-sel-top), var(--dl-sel-bottom));
+  box-shadow: inset 0 0 0 1px var(--dl-sel-edge);
+}
+
+:root[data-style="dauntless"] .lang-switch {
+  border-radius: 3px;
+  border-color: var(--dl-silver-lo);
+  background: #040f1a;
+}
+
+:root[data-style="dauntless"] .lang-btn {
+  border-radius: 2px;
+  color: #c9d6e2;
+}
+
+:root[data-style="dauntless"] .lang-btn[aria-pressed="true"] {
+  color: #fff;
+  background: linear-gradient(180deg, var(--dl-sel-top), var(--dl-sel-bottom));
+  box-shadow: inset 0 0 0 1px var(--dl-sel-edge);
+  text-shadow: 0 1px 2px #000;
+}
+
+/* ------------------------------------------------------------------ dialogs */
+
+/* A steel frame around the dialogs, with the game's steel rule under the title. */
+:root[data-style="dauntless"] .modal {
+  border: 3px solid transparent;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, #0d2f4f, #071a2c) padding-box,
+    linear-gradient(180deg, var(--dl-silver-hi), var(--dl-silver-mid) 35%, var(--dl-silver-lo) 75%, var(--dl-silver-mid)) border-box;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.7);
+}
+
+:root[data-style="dauntless"] .modal-title {
+  padding-bottom: 8px;
+  background: var(--silver-line) bottom / 100% 1px no-repeat;
+}
+
+/* ------------------------------------------------------------------ title bar */
+
+:root[data-style="dauntless"] .titlebar {
+  position: relative;
+}
+
+/* The ornament that crowns the game's menus, drawn on the bar's steel line (no image): a raised
+   plate above the line, and a crest with sloping wings hanging below it. */
+:root[data-style="dauntless"] .titlebar::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 280px;
+  height: 12px;
+  transform: translateX(-50%);
+  clip-path: polygon(0 100%, 14% 35%, 30% 35%, 36% 0, 64% 0, 70% 35%, 86% 35%, 100% 100%);
+  background: linear-gradient(180deg, var(--dl-silver-hi), var(--dl-silver-mid) 60%, var(--dl-silver-lo));
+  pointer-events: none;
+}
+
+:root[data-style="dauntless"] .titlebar::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 440px;
+  height: 16px;
+  transform: translateX(-50%);
+  clip-path: polygon(0 0, 100% 0, 72% 35%, 62% 100%, 38% 100%, 28% 35%);
+  background: linear-gradient(180deg, var(--dl-silver-hi), var(--dl-silver-mid) 55%, var(--dl-silver-lo));
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.6));
+  pointer-events: none;
+  z-index: 1;
+}
+
+:root[data-style="dauntless"] .titlebar-brand {
+  color: #dbe6f0;
+  text-shadow: 0 1px 2px #000;
+}
+
+:root[data-style="dauntless"] .win-btn {
+  color: #b9c6d2;
+  transition: background 0.12s, color 0.12s;
+  /* stop above the bar's steel line, so a hover never covers it */
+  height: calc(100% - 3px);
+  align-self: flex-start;
+}
+
+/* Quiet window buttons: a faint light on hover, a muted red only for close. */
+:root[data-style="dauntless"] .win-btn:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 0.08);
+  box-shadow: none;
+}
+
+:root[data-style="dauntless"] .win-close:hover {
+  color: #fff;
+  background: rgb(180 45 38 / 0.85);
+}
+
+/* ------------------------------------------------------------------ rail cards, banner, chips, steps */
+
+/* The account box, the partner tile and the Patreon / Discord buttons: silver framed like the panels. */
+:root[data-style="dauntless"] .account-chip,
+:root[data-style="dauntless"] .partner-mini,
+:root[data-style="dauntless"] .social-button,
+:root[data-style="dauntless"] .partner-banner {
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, #0c2b48, #071a2c) padding-box,
+    linear-gradient(180deg, var(--dl-silver-hi), var(--dl-silver-mid) 30%, var(--dl-silver-lo) 70%, var(--dl-silver-mid)) border-box;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.45);
+}
+
+:root[data-style="dauntless"] .partner-mini:hover:not(:disabled),
+:root[data-style="dauntless"] .social-button:hover:not(:disabled),
+:root[data-style="dauntless"] .partner-banner:hover:not(:disabled) {
+  background:
+    linear-gradient(180deg, #17405f, #0c2638) padding-box,
+    linear-gradient(180deg, var(--dl-sel-edge), var(--dl-silver-mid)) border-box;
+}
+
+/* Badges and chips ("Gráficos: Cinemática", "Servidor público"): small dark plates with a steel edge. */
+:root[data-style="dauntless"] .badge {
+  border-radius: 3px;
+  border-color: var(--dl-silver-mid);
+  background: linear-gradient(180deg, #102f4d, #08192b);
+}
+
+/* Setup steps: metal rings like the game's round icon frames, the current one lit blue. */
+:root[data-style="dauntless"] .step-dot {
+  border: 2px solid var(--dl-silver-mid);
+  background: radial-gradient(circle at 40% 35%, #173f63, #07192b);
+  box-shadow: 0 0 0 1px #000, inset 0 1px 2px rgb(255 255 255 / 0.15);
+}
+
+:root[data-style="dauntless"] .step.done .step-dot {
+  border-color: var(--dl-silver-hi);
+  color: var(--dl-cyan);
+}
+
+:root[data-style="dauntless"] .step.current .step-dot {
+  border-color: var(--dl-sel-edge);
+  background: linear-gradient(180deg, var(--dl-sel-top), var(--dl-sel-bottom));
+  color: #fff;
+  box-shadow: 0 0 0 1px #000, 0 0 8px color-mix(in srgb, var(--dl-sel-top) 35%, transparent);
+}
+
+
+/* ------------------------------------------------------------------ server switcher */
+
+:root[data-style="dauntless"] .server-menu {
+  padding: 4px;
+  border-radius: 3px;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#061a2d, #061a2d) padding-box,
+    linear-gradient(180deg, var(--dl-silver-hi), var(--dl-silver-mid) 30%, var(--dl-silver-lo) 70%, var(--dl-silver-mid)) border-box;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.6);
+}
+
+:root[data-style="dauntless"] .server-menu-head {
+  padding: 4px 8px 6px;
+  margin-bottom: 4px;
+  color: #b9c6d2;
+  background: var(--silver-line) bottom / 100% 1px no-repeat;
+}
+
+:root[data-style="dauntless"] .server-menu-item {
+  border-radius: 2px;
+  border: 1px solid transparent;
+}
+
+:root[data-style="dauntless"] .server-menu-item:hover,
+:root[data-style="dauntless"] .server-menu-item:focus-visible {
+  border-color: var(--dl-sel-edge);
+  background: linear-gradient(180deg, var(--dl-sel-top), var(--dl-sel-bottom));
+}
+
+:root[data-style="dauntless"] .server-menu-name {
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+
+:root[data-style="dauntless"] .account-switch:hover:not(:disabled) {
+  background: transparent;
+}
+
+:root[data-style="dauntless"] .account-switch::after {
+  border-color: #b9c6d2;
+}

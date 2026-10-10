@@ -47,7 +47,7 @@ Portti on numeroitu ”ovi”, jonka kautta ohjelmat ottavat yhteyttä toisiinsa
 | `C:\dr\data\metagame.log` | Yksi JSON-rivi tapahtumaa kohden. Fork kirjaa jokaisen pyynnön muodossa `METHOD /path gs=0` (peliohjelma) tai `gs=1` (pelipalvelin). Tämä on tärkein mittarimme: kuinka pitkälle peliohjelma pääsi, ja mitä se pyysi viimeksi? |
 | `C:\dr\data\deploy.log` | Matchmaking-pyynnöt, `Running Gameserver Watchdog!` 60 sekunnin välein ja `Cleaning up Gameserver on port N`, kun palvelin sulkeutuu. |
 | Pelipalvelinten konsoli-ikkunat | Palvelin-DLL:n avaamia; ne näyttävät palvelimen oman tulosteen. Ramsgaten ja Dojon ikkunat näkyvät. Metsästyspalvelimet käynnistetään ikkuna piilotettuna. |
-| Peliohjelman konsoli-ikkuna | DLL avaa sen client-tilassa. **Jos konsoli-ikkunaa ei ilmesty peliohjelman käynnistyessä, DLL-tiedostot eivät ole latautuneet.** |
+| Peliohjelman konsoli-ikkuna | DLL avaa sen client-tilassa ja pitää sen piilossa. Näet sen, kun otat käynnistimessä käyttöön Asetukset > Vianmääritys > "Näytä lokiruutu" (se antaa pelille `DR_SHOW_CONSOLE=1`). **Kun asetus on käytössä ja konsoli-ikkunaa ei ilmesty peliohjelman käynnistyessä, DLL-tiedostot eivät ole latautuneet.** |
 | `%LOCALAPPDATA%\Archon\Saved\Crashes\` | Kaatumisraportit. Niiden lukemisesta kerrotaan sivulla [Kaatumisten tutkiminen]({{ crashes_page.url | relative_url }}). |
 | `C:\DauntlessRevived\data\logs\` (Windows-palvelinpaketti) | Samat lokit nimillä `metagame.out.log` ja `deploy.out.log` sekä yhdyskäytävän pääsyloki (`gateway.out.log`) ja valvojan `supervisor.log`. |
 | `%APPDATA%\Dauntless Revived Launcher\logs\launcher.log` | Kavereiden käynnistin: liittymiset, yhteysongelmat, lataukset ja pelin komentorivi (avain piilotettuna). |
@@ -532,7 +532,7 @@ Lue metagamen lokia siitä hetkestä alkaen, kun käynnistit pelin:
 
 - **Riviä `POST /account/api/oauth/token` ei ole lainkaan.** Peliohjelma ei tavoita metagamea.
   Tarkista, että:
-  - peliohjelman konsoli-ikkuna ilmestyi (jos ei, DLL-tiedostot puuttuvat `Win64`-kansiosta tai eivät
+  - "Näytä lokiruutu" käytössä, peliohjelman konsoli-ikkuna ilmestyi (jos ei, DLL-tiedostot puuttuvat `Win64`-kansiosta tai eivät
     lataudu);
   - ensimmäinen käynnistysparametri on `127.0.0.1:61000`;
   - metagame kuuntelee (`curl.exe -s -m 5 http://127.0.0.1:61000/dauntless-status`).

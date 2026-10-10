@@ -125,6 +125,17 @@ export interface ServerInfo {
   fingerprint: string | null; // public mode: the pinned certificate fingerprint (not secret)
 }
 
+// A server joined before, for switching back to it without the invite.
+export interface SavedServerInfo {
+  id: string; // the account key slot id (not secret)
+  mode: ServerMode;
+  host: string;
+  port: number;
+  name: string;
+  current: boolean;
+  username: string | null;
+}
+
 export interface Settings {
   huntRegion?: 'auto' | 'main' | 'aus' | 'ger';
   graphics: GraphicsPreset;
@@ -132,12 +143,14 @@ export interface Settings {
   windowed: boolean;
   language: Language;
   gameLanguage: GameLanguage;
+  showConsole: boolean; // the DLL's log window, normally hidden (DR_SHOW_CONSOLE=1)
 }
 
 export interface Snapshot {
   phase: Phase;
   busy: boolean;
   server: ServerInfo | null;
+  savedServers: SavedServerInfo[];
   connect: {
     checking: boolean;
     problem: ConnectProblem;
@@ -219,6 +232,8 @@ export const IPC = {
   submitInvite: "dr:submit-invite",
   retryConnect: "dr:retry-connect",
   forgetServer: "dr:forget-server",
+  switchServer: "dr:switch-server",
+  removeSavedServer: "dr:remove-saved-server",
   register: "dr:register",
   useExistingKey: "dr:use-existing-key",
   importKeyFile: "dr:import-key-file",

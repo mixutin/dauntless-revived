@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -2 108 150">
+  <defs>
+    <linearGradient id="g-edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe45c"/>
+      <stop offset="0.55" stop-color="#f2b80f"/>
+      <stop offset="1" stop-color="#b87700"/>
+    </linearGradient>
+    <linearGradient id="g-hollow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b4a00"/>
+      <stop offset="1" stop-color="#2b1b00"/>
+    </linearGradient>
+    <linearGradient id="g-bar" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd52a"/>
+      <stop offset="0.45" stop-color="#fff38a"/>
+      <stop offset="1" stop-color="#e09a00"/>
+    </linearGradient>
+    <radialGradient id="g-ball" cx="0.42" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#fff6a0"/>
+      <stop offset="0.5" stop-color="#ffd21a"/>
+      <stop offset="1" stop-color="#c98500"/>
+    </radialGradient>
+  </defs>
+  <g stroke="#0d1226" stroke-width="5" stroke-linejoin="round">
+    <polygon points="1.5,71 50,20 98.5,71 50,122" fill="url(#g-edge)"/>
+  </g>
+  <polygon points="9,71 50,28 91,71 50,114" fill="url(#g-hollow)"/>
+  <g stroke="#0d1226" stroke-width="5" stroke-linejoin="round">
+    <polygon points="25,3 76,3 69,102 32,102" fill="#c98a00"/>
+    <circle cx="50" cy="123" r="17" fill="url(#g-ball)"/>
+  </g>
+  <polygon points="28,6.5 73,6.5 67,97 34,97" fill="url(#g-bar)"/>
+  <polygon points="34,97 67,97 63,91 38,91" fill="#b87400"/>
+  <polygon points="28,6.5 73,6.5 70,11 31,11" fill="#ffe95e"/>
+  <ellipse cx="45" cy="117" rx="7" ry="4" fill="#fffbd0" opacity="0.7" transform="rotate(-25 45 117)"/>
+</svg>

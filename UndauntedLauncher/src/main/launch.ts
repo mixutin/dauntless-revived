@@ -85,7 +85,8 @@ export class GameProcess {
     this.listeners.push(fn);
   }
 
-  start(win64Dir: string, args: string[], runtime?: LaunchRuntime): Promise<void> {
+  // extraEnv: added to the game's environment (DR_SHOW_CONSOLE=1 keeps the DLL's log window visible).
+  start(win64Dir: string, args: string[], runtime?: LaunchRuntime, extraEnv?: Record<string, string>): Promise<void> {
     if (this.child) return Promise.reject(new Error("already running"));
     const exe = path.join(win64Dir, EXE_NAME);
     const command = runtime?.command ?? exe;
@@ -96,7 +97,7 @@ export class GameProcess {
         stdio: "ignore",
         windowsHide: false,
         detached: false,
-        env: runtime?.env ?? process.env,
+        env: extraEnv ? { ...(runtime?.env ?? process.env), ...extraEnv } : runtime?.env ?? process.env,
       });
       let started = false;
       child.once("spawn", () => {

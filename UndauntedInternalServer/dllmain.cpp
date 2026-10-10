@@ -1240,6 +1240,22 @@ void Init() {
         if (Globals::EnableLogging) {
             if (!IsRunningUnderWine()) {
                 AllocConsole();
+                // Players don't need the log window: keep it hidden, off the screen and the taskbar, so
+                // it never covers the game and can't be closed by mistake (closing it ends the game).
+                // DR_SHOW_CONSOLE=1 in the environment keeps it visible for troubleshooting.
+                // The console host shows the window a moment after AllocConsole returns, and the game
+                // shows it again whenever it changes screens (loading into the world, display mode
+                // changes), so a small thread keeps it hidden for the whole session.
+                char ShowConsole[2] = {};
+                if (GetEnvironmentVariableA("DR_SHOW_CONSOLE", ShowConsole, sizeof(ShowConsole)) != 1 || ShowConsole[0] != '1') {
+                    CreateThread(nullptr, 0, [](LPVOID) -> DWORD {
+                        for (;;) {
+                            HWND Console = GetConsoleWindow();
+                            if (Console && IsWindowVisible(Console)) ShowWindow(Console, SW_HIDE);
+                            Sleep(50);
+                        }
+                    }, nullptr, 0, nullptr);
+                }
                 FILE* Dummy;
                 freopen_s(&Dummy, "CONOUT$", "w", stdout);
                 freopen_s(&Dummy, "CONIN$", "r", stdin);

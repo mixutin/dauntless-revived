@@ -20,6 +20,7 @@ export interface StoredSettings {
   huntRegion?: 'auto' | 'main' | 'aus' | 'ger';
   version: 1;
   server: StoredServer | null;
+  savedServers: StoredServer[]; // servers joined before, to switch back without the invite
   installDir: string | null; // null = the default folder
   verifiedDir: string | null; // the folder whose files were last fully checked or downloaded
   graphics: GraphicsPreset;
@@ -27,6 +28,7 @@ export interface StoredSettings {
   windowed: boolean;
   language: Language;
   gameLanguage: GameLanguage;
+  showConsole: boolean;
   usernames: Record<string, string>; // per server id, for display only
   backupOffered: Record<string, boolean>; // per server id: the one-time backup offer was shown
 }
@@ -35,6 +37,7 @@ export function defaultSettings(language: Language): StoredSettings {
   return {
     version: 1,
     server: null,
+    savedServers: [],
     installDir: null,
     verifiedDir: null,
     graphics: DEFAULT_GRAPHICS,
@@ -42,6 +45,7 @@ export function defaultSettings(language: Language): StoredSettings {
     windowed: false,
     language,
     gameLanguage: "auto",
+    showConsole: false,
     usernames: {},
     backupOffered: {},
   };
@@ -58,35 +62,58 @@ function validDir(v: unknown, platform: NodeJS.Platform = process.platform): str
   return null;
 }
 
+export const MAX_SAVED_SERVERS = 20;
+
+function sanitizeServer(sv: unknown): StoredServer | null {
+  if (!isObject(sv)) return null;
+  const name = typeof sv.name === "string" ? cleanServerName(sv.name) : null;
+  const mode: ServerMode = sv.mode === "public" ? "public" : "private";
+  // Private mode is plain HTTP: only into the tailnet (or loopback), as parseInvite enforces.
+  const hostOk = typeof sv.host === "string" && isValidHost(sv.host) && (mode === "public" || isPrivateModeHost(sv.host));
+  const portOk = Number.isInteger(sv.port) && (sv.port as number) >= 1 && (sv.port as number) <= 65535;
+  // A public server without a valid fingerprint is dropped: it could never be reached safely.
+  const fpOk = mode === "private" || isValidFingerprint(sv.fp);
+  if (!hostOk || !portOk || !fpOk || !name) return null;
+  return {
+    mode,
+    host: sv.host as string,
+    port: sv.port as number,
+    name,
+    share: mode === "private" && typeof sv.share === "string" && isValidShareUrl(sv.share) ? sv.share : null,
+    fp: mode === "public" ? (sv.fp as string) : null,
+    code: typeof sv.code === "string" && isValidInviteCode(sv.code) ? sv.code : null,
+  };
+}
+
+// The same server (and the same account key slot): mode, host and port.
+export function sameServer(a: StoredServer, b: StoredServer): boolean {
+  return a.mode === b.mode && a.host === b.host && a.port === b.port;
+}
+
 export function sanitizeSettings(raw: unknown, language: Language, platform: NodeJS.Platform = process.platform): StoredSettings {
   const s = defaultSettings(language);
   if (!isObject(raw)) return s;
-  if (isObject(raw.server)) {
-    const sv = raw.server;
-    const name = typeof sv.name === "string" ? cleanServerName(sv.name) : null;
-    const mode: ServerMode = sv.mode === "public" ? "public" : "private";
-    // Private mode is plain HTTP: only into the tailnet (or loopback), as parseInvite enforces.
-    const hostOk = typeof sv.host === "string" && isValidHost(sv.host) && (mode === "public" || isPrivateModeHost(sv.host));
-    const portOk = Number.isInteger(sv.port) && (sv.port as number) >= 1 && (sv.port as number) <= 65535;
-    // A public server without a valid fingerprint is dropped: it could never be reached safely.
-    const fpOk = mode === "private" || isValidFingerprint(sv.fp);
-    if (hostOk && portOk && fpOk && name) {
-      s.server = {
-        mode,
-        host: sv.host as string,
-        port: sv.port as number,
-        name,
-        share: mode === "private" && typeof sv.share === "string" && isValidShareUrl(sv.share) ? sv.share : null,
-        fp: mode === "public" ? (sv.fp as string) : null,
-        code: typeof sv.code === "string" && isValidInviteCode(sv.code) ? sv.code : null,
-      };
+  s.server = sanitizeServer(raw.server);
+  if (Array.isArray(raw.savedServers)) {
+    for (const entry of raw.savedServers) {
+      const sv = sanitizeServer(entry);
+      if (sv && !s.savedServers.some((o) => sameServer(o, sv)) && s.savedServers.length < MAX_SAVED_SERVERS) s.savedServers.push(sv);
     }
+  }
+  // The current server is always in the list, as it is now (a newer invite or name replaces the old entry).
+  if (s.server) {
+    const current = s.server;
+    const i = s.savedServers.findIndex((o) => sameServer(o, current));
+    if (i >= 0) s.savedServers[i] = { ...current };
+    else s.savedServers.unshift({ ...current });
+    s.savedServers = s.savedServers.slice(0, MAX_SAVED_SERVERS);
   }
   s.installDir = validDir(raw.installDir, platform);
   s.verifiedDir = validDir(raw.verifiedDir, platform);
   if (GRAPHICS_PRESETS.includes(raw.graphics as GraphicsPreset)) s.graphics = raw.graphics as GraphicsPreset;
   if (EXPOSURE_MODES.includes(raw.exposure as ExposureMode)) s.exposure = raw.exposure as ExposureMode;
   s.windowed = raw.windowed === true;
+  s.showConsole = raw.showConsole === true;
   if (raw.huntRegion === 'auto' || raw.huntRegion === 'main' || raw.huntRegion === 'aus' || raw.huntRegion === 'ger') s.huntRegion = raw.huntRegion;
   if (LANGUAGES.includes(raw.language as Language)) s.language = raw.language as Language;
   if (GAME_LANGUAGES.includes(raw.gameLanguage as GameLanguage)) s.gameLanguage = raw.gameLanguage as GameLanguage;

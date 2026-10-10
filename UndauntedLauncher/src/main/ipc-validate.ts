@@ -14,6 +14,7 @@ export function settingsPatch(v: unknown): Partial<Settings> | null {
     if (k === "graphics" && GRAPHICS_PRESETS.includes(val as GraphicsPreset)) out.graphics = val as GraphicsPreset;
     else if (k === "exposure" && EXPOSURE_MODES.includes(val as ExposureMode)) out.exposure = val as ExposureMode;
     else if (k === "windowed" && typeof val === "boolean") out.windowed = val;
+    else if (k === "showConsole" && typeof val === "boolean") out.showConsole = val;
     else if (k === "huntRegion" && (val === 'auto' || val === 'main' || val === 'aus' || val === 'ger')) out.huntRegion = val;
     else if (k === "language" && LANGUAGES.includes(val as Language)) out.language = val as Language;
     else if (k === "gameLanguage" && GAME_LANGUAGES.includes(val as GameLanguage)) out.gameLanguage = val as GameLanguage;
