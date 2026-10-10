@@ -22,7 +22,8 @@ type Modal =
   // A public invite whose certificate is not the one this PC's key for that server belongs to.
   | { kind: "cert_changed"; link: string; name: string; host: string; oldFp: string | null; newFp: string }
   | { kind: "logout" }
-  | { kind: "leave" };
+  | { kind: "leave" }
+  | { kind: "remove_server"; id: string; name: string };
 
 const api = window.launcher;
 const ART_URL = /^dr-art:\/\/bg\/[0-9a-f]{64}$/;
@@ -337,7 +338,7 @@ function savedServersCard(snap: Snapshot): HTMLElement | null {
         "div",
         { class: "settings-actions" },
         button(t("saved_join"), () => void switchTo(sv.id), { cls: "btn-primary", fk: `saved-${sv.id}`, disabled: locked }),
-        linkButton(t("saved_remove"), () => void api.removeSavedServer(sv.id), { icon: "close", fk: `saved-rm-${sv.id}`, disabled: locked }),
+        linkButton(t("saved_remove"), () => showModal({ kind: "remove_server", id: sv.id, name: sv.name }), { icon: "close", fk: `saved-rm-${sv.id}`, disabled: locked }),
       ),
     ),
   );
@@ -1434,7 +1435,7 @@ function renderSettings(): void {
                 sv.name,
                 savedServerSub(sv),
                 button(t("saved_switch_to"), () => void switchTo(sv.id), { cls: "btn-primary", fk: `set-saved-${sv.id}`, disabled: busy }),
-                button(t("saved_remove"), () => void api.removeSavedServer(sv.id), { icon: "close", fk: `set-saved-rm-${sv.id}`, disabled: busy }),
+                button(t("saved_remove"), () => showModal({ kind: "remove_server", id: sv.id, name: sv.name }), { icon: "close", fk: `set-saved-rm-${sv.id}`, disabled: busy }),
               ),
             ),
         )
@@ -1888,6 +1889,15 @@ function renderModal(): void {
         return null;
       };
       break;
+    case "remove_server":
+      title = t("remove_server_title", { name: m.name });
+      text = [h("p", { class: "modal-text" }, t("remove_server_text", { name: m.name }))];
+      confirmLabel = t("remove_server_confirm");
+      onConfirm = async () => {
+        await report(await api.removeSavedServer(m.id));
+        return null;
+      };
+      break;
   }
   const cancel = button(m.kind === "invite" ? t("link_cancel") : t("cancel"), () => closeModal(), { fk: "modal-cancel" });
   const confirm = button(confirmLabel, () => {
@@ -1911,7 +1921,7 @@ function renderModal(): void {
   root.replaceChildren(dialog);
   root.hidden = false;
   // Destructive or risky choices never get the default focus.
-  (m.kind === "logout" || m.kind === "cert_changed" ? cancel : confirm).focus();
+  (m.kind === "logout" || m.kind === "cert_changed" || m.kind === "remove_server" ? cancel : confirm).focus();
 }
 
 // The server switcher closes on a click anywhere else, and on Escape.

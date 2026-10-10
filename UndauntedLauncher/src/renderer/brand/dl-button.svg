@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" width="200" height="40">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b6d9d"/>
+      <stop offset="0.45" stop-color="#11598a"/>
+      <stop offset="1" stop-color="#0c4a74"/>
+    </linearGradient>
+  </defs>
+  <!-- The game's tab button: a dark rim with 45 degree corners, a petrol blue body and a bright top edge. -->
+  <path d="M4 0 H196 L200 4 V36 L196 40 H4 L0 36 V4 Z" fill="#0a1824"/>
+  <path d="M5 2 H195 L198 5 V35 L195 38 H5 L2 35 V5 Z" fill="url(#body)"/>
+  <path d="M5.6 3.2 H194.5 L196.8 5.5 V34.5 L194.5 36.8 H5.6 L3.2 34.5 V5.5 Z" fill="none" stroke="#3a8cc0" stroke-width="0.9" opacity="0.8"/>
+  <path d="M5 2.5 H195" fill="none" stroke="#72b0da" stroke-width="1.1"/>
+</svg>

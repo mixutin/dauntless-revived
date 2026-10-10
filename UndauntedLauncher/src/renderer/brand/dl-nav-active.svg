@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 50" width="240" height="50" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="paint" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4f9ad8"/>
+      <stop offset="0.35" stop-color="#2f78bd"/>
+      <stop offset="0.75" stop-color="#1d5c9c"/>
+      <stop offset="1" stop-color="#164a82"/>
+    </linearGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- A brush stroke of paint: straight on the left, torn and ragged where the brush lifted on the right. -->
+  <path d="M0 2 L204 1 L212 4 L207 7 L221 9 L214 13 L230 16 L219 20 L236 24 L222 28 L232 32 L216 35 L226 39 L208 42 L215 46 L196 48 L0 48 Z" fill="#0b2744"/>
+  <path d="M0 4 L202 3 L208 5 L203 8 L217 10 L210 14 L226 17 L215 21 L232 24 L218 28 L228 31 L212 35 L221 38 L204 41 L210 45 L193 46 L0 46 Z" fill="url(#paint)"/>
+  <!-- bristle streaks along the stroke -->
+  <path d="M0 9 H190 M0 15 H160 M20 22 H205 M0 30 H175 M40 37 H198 M0 42 H150" fill="none" stroke="#7fbdf0" stroke-opacity="0.16" stroke-width="1.2"/>
+  <path d="M10 12 H120 M30 26 H140 M5 34 H110" fill="none" stroke="#0c3a66" stroke-opacity="0.35" stroke-width="1"/>
+  <!-- glossy light along the top and a soft fade from the left -->
+  <path d="M0 4 L202 3 L208 5 L203 8 L0 9 Z" fill="#a9d6fb" fill-opacity="0.45"/>
+  <rect x="0" y="4" width="240" height="42" fill="url(#fade)"/>
+</svg>

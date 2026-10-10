@@ -344,6 +344,9 @@ const en = {
   leave_title: "Use a different invite?",
   leave_text: "Your key for {name} stays on this PC, so you can come back with its invite.",
   leave_confirm: "Continue",
+  remove_server_title: "Remove {name} from your list?",
+  remove_server_text: "It only leaves this list. Your key for {name} stays on this PC, so you can come back any time with its invite.",
+  remove_server_confirm: "Remove",
   cancel: "Cancel",
 
   update_ready: "A new launcher version is ready.",
@@ -817,6 +820,9 @@ const fi: Record<StringKey, string> = {
   leave_title: "Käytetäänkö toista kutsua?",
   leave_text: "Avaimesi palvelimelle {name} jää tälle koneelle, joten voit palata sen kutsulla.",
   leave_confirm: "Jatka",
+  remove_server_title: "Poistetaanko {name} listaltasi?",
+  remove_server_text: "Se poistuu vain tältä listalta. Avaimesi palvelimelle {name} jää tälle koneelle, joten voit palata milloin tahansa sen kutsulla.",
+  remove_server_confirm: "Poista",
   cancel: "Peruuta",
 
   update_ready: "Käynnistimen uusi versio on valmiina.",
@@ -1286,6 +1292,9 @@ const es: Record<StringKey, string> = {
   leave_title: "¿Usar otra invitación?",
   leave_text: "Tu clave para {name} se queda en este PC, así que puedes volver con su invitación.",
   leave_confirm: "Continuar",
+  remove_server_title: "¿Quitar {name} de tu lista?",
+  remove_server_text: "Solo desaparece de esta lista. Tu clave para {name} se queda en este PC, así que puedes volver cuando quieras con su invitación.",
+  remove_server_confirm: "Quitar",
   cancel: "Cancelar",
 
   update_ready: "Hay una nueva versión del launcher lista.",
