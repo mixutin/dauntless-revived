@@ -317,6 +317,51 @@ img {
   }
 }
 
+/* Streamer mode: hidden values (filler text, blurred) with an eye to show them, and the invite text
+   as dots. */
+.secret {
+  position: relative;
+}
+
+.secret-blur {
+  filter: blur(5px);
+  user-select: none;
+}
+
+/* Floats just right of the value, so showing or hiding it never moves the layout. */
+.secret-eye {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  margin-left: 4px;
+  transform: translateY(-50%);
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dr-steel);
+  cursor: pointer;
+  flex: none;
+}
+
+.secret-eye:hover {
+  color: var(--dr-frost);
+  background: color-mix(in srgb, var(--dr-deep) 70%, transparent);
+}
+
+.secret-eye .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.textarea.masked {
+  -webkit-text-security: disc;
+}
+
 .nav-badge {
   margin-left: auto;
   width: auto;

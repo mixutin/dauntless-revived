@@ -7520,7 +7520,7 @@ The launcher keeps its data in Electron's per-user folder, which is named after 
 
 | Path | What it is |
 |:-----|:-----------|
-| `settings.json` | The joined server (mode, host, port, name, and the Tailscale share link or the certificate fingerprint; the invite code until it has been used), the install folder, the last fully checked game folder, the graphics preset, the auto exposure choice (`exposure`: `game` or `basic`), windowed mode, the language, the game language (`gameLanguage`: `auto` or a culture such as `es-ES`), whether to show the game's log window (`showConsole`), and per server the username and whether the key backup was offered. Written atomically through `settings.json.tmp`; invalid fields fall back to defaults when it is read. No account key. |
+| `settings.json` | The joined server (mode, host, port, name, and the Tailscale share link or the certificate fingerprint; the invite code until it has been used), the install folder, the last fully checked game folder, the graphics preset, the auto exposure choice (`exposure`: `game` or `basic`), windowed mode, the language, the game language (`gameLanguage`: `auto` or a culture such as `es-ES`), whether to show the game's log window (`showConsole`), streamer mode (`streamerMode`), and per server the username and whether the key backup was offered. Written atomically through `settings.json.tmp`; invalid fields fall back to defaults when it is read. No account key. |
 | `keys\<server id>.key` | The account key for one server. **Secret: never share, never copy it anywhere.** It is encrypted with Windows DPAPI, so only the same Windows user on the same PC can read it. Inside: the format tag `DRK2`, the certificate fingerprint the key belongs to (public servers) and the key. The server id is the first 24 hex characters of the SHA-256 of `host:port` (private mode) or `public:host:port` (public mode). "Log out" deletes the file. |
 | `logs\launcher.log`, `launcher.old.log` | The launcher log (see [Logs](https://mixutin.github.io/dauntless-revived/reference/files.html#logs)): startup, joins, connection problems, downloads, the game's command line with the key hidden. It holds server addresses and your username. |
 | `verified-files.json` | Size and modification time of the game files already hashed, so an interrupted install does not hash them again. Repair ignores it. Safe to delete. |
@@ -7546,6 +7546,8 @@ a different folder from the launcher:
 | `%APPDATA%\DauntlessRevived\settings.json` | The host address and the game folder, so `play.ps1` needs no arguments. No secrets. |
 | The game folder (`-Game`, default `C:\D144\Dauntless`) | `setup.ps1` copies the two checked DLLs into `Archon\Binaries\Win64\`. |
 | `%LOCALAPPDATA%\Archon\Saved\Config\WindowsClient\` | `play.ps1` rewrites the same `Engine.ini` sections as the launcher and, with `-Graphics`, the graphics lines of `GameUserSettings.ini`. |
+
+Saved servers: `savedServers` remembers up to 20 joined servers in launcher settings; removing a saved server does not delete its account key.
 
 ================================================================================
 URL: https://mixutin.github.io/dauntless-revived/reference/game-settings.html
@@ -16951,5 +16953,3 @@ survives even if this project does not.
 
 If you hold rights in any of this and have a concern, please open an issue in
 [the repository](https://github.com/mixutin/dauntless-revived).
-
-Launcher savedServers stores up to 20 previously joined servers; removing a listing preserves its stored account key.

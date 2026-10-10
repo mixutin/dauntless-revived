@@ -333,6 +333,9 @@ test("exposure setting defaults to the game and rejects unexpected renderer valu
     assert.deepEqual(sanitizeSettings({ savedServers: "x" }, "en").savedServers, []);
   }
   assert.equal(sanitizeSettings({}, "en").exposure, "game");
+  assert.equal(sanitizeSettings({}, "en").streamerMode, false, "streamer mode is off by default");
+  assert.equal(sanitizeSettings({ streamerMode: true }, "en").streamerMode, true);
+  assert.equal(sanitizeSettings({ streamerMode: "yes" }, "en").streamerMode, false, "only a real true turns it on");
   assert.equal(sanitizeSettings({ exposure: "basic" }, "en").exposure, "basic");
   assert.equal(sanitizeSettings({ exposure: "manual" }, "en").exposure, "game");
   assert.deepEqual(settingsPatch({ exposure: "basic" }), { exposure: "basic" });

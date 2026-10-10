@@ -144,6 +144,7 @@ export interface Settings {
   language: Language;
   gameLanguage: GameLanguage;
   showConsole: boolean; // the DLL's log window, normally hidden (DR_SHOW_CONSOLE=1)
+  streamerMode?: boolean; // hide addresses, fingerprints, paths and player names on screen
 }
 
 export interface Snapshot {

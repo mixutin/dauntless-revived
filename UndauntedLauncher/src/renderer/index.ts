@@ -36,6 +36,7 @@ const state = {
   lang: "en" as Language,
   view: "play" as View,
   inviteText: "",
+  revealed: new Set<string>(), // streamer mode: the values shown with the eye, until the launcher closes
   username: "",
   keyFormOpen: false,
   existingFormOpen: false,
@@ -195,8 +196,8 @@ function updateInviteFeedback(): void {
         "div",
         { class: "preview-text" },
         h("div", { class: "preview-name" }, r.invite.name),
-        h("div", { class: "preview-host" }, `${r.invite.host}:${r.invite.port}`),
-        r.invite.fp ? h("div", { class: "preview-host mono" }, t("link_fingerprint", { fp: shortFingerprint(r.invite.fp) })) : null,
+        h("div", { class: "preview-host" }, secret(`${r.invite.host}:${r.invite.port}`, "invite-host")),
+        r.invite.fp ? h("div", { class: "preview-host mono" }, t("link_fingerprint", { fp: hideText(shortFingerprint(r.invite.fp)) })) : null,
       ),
       h("span", {}, modeBadge(r.invite.mode)),
     );
@@ -217,6 +218,62 @@ function updateUsernameFeedback(): void {
   else usernameHint.replaceChildren(tk(`reg_check_${check}`));
   if (check !== "ok" && state.username.length > 0) usernameInput.setAttribute("aria-invalid", "true");
   else usernameInput.removeAttribute("aria-invalid");
+}
+
+// ------------------------------------------------------------------ streamer mode
+
+// Streamer mode keeps what could identify a server or the PC off the screen: addresses, certificate
+// fingerprints, the invite text, the install folder (it holds the Windows user name) and other
+// players' names. A value that the player may need gets an eye button to show it for a moment.
+function streamer(): boolean {
+  return state.snap?.settings.streamerMode === true;
+}
+
+function hideText(text: string): string {
+  return streamer() ? "\u2022\u2022\u2022\u2022\u2022\u2022" : text;
+}
+
+// A hidden value is never on screen: it is swapped for random letters and digits of the same length,
+// and that filler is what gets blurred, so nothing can be recovered from a stream or a screenshot,
+// even by tools that undo a blur. The filler is drawn once per value and kept until the launcher
+// closes (the lists redraw often and must not flicker); it comes from the system's random source,
+// never from the value itself. The same length keeps the layout still when the mode is switched; the
+// eye floats beside the value without taking room.
+const fillers = new Map<string, string>();
+function filler(text: string): string {
+  let out = fillers.get(text);
+  if (out === undefined) {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const bytes = crypto.getRandomValues(new Uint8Array(Array.from(text).length));
+    out = Array.from(bytes, (v) => chars[v % chars.length]).join("");
+    fillers.set(text, out);
+  }
+  return out;
+}
+
+function blurred(text: string, cls = ""): HTMLElement {
+  if (!streamer()) return h("span", { class: cls || undefined }, text);
+  return h("span", { class: `${cls} secret-blur`.trim(), "aria-hidden": "true" }, filler(text));
+}
+
+function secret(text: string, key: string, cls = ""): HTMLElement {
+  if (!streamer()) return h("span", { class: cls || undefined }, text);
+  const shown = state.revealed.has(key);
+  const eye = h("button", { type: "button", class: "secret-eye", title: t(shown ? "streamer_hide" : "streamer_show"), "aria-label": t(shown ? "streamer_hide" : "streamer_show"), "aria-pressed": shown ? "true" : "false" }, icon(shown ? "eye_off" : "eye"));
+  eye.addEventListener("click", () => {
+    if (shown) state.revealed.delete(key);
+    else state.revealed.add(key);
+    refreshSecrets();
+  });
+  return h("span", { class: "secret" }, h("span", { class: `${cls} ${shown ? "" : "secret-blur"}`.trim() || undefined, "aria-hidden": shown ? undefined : "true" }, shown ? text : filler(text)), eye);
+}
+
+function refreshSecrets(): void {
+  document.documentElement.classList.toggle("streamer", streamer());
+  inviteInput.classList.toggle("masked", streamer());
+  for (const sel of ["#view-play", "#view-server", "#view-settings", "#server-panel", "#account-chip"]) forceRender($(sel));
+  updateInviteFeedback();
+  renderAll();
 }
 
 // ------------------------------------------------------------------ small builders
@@ -316,8 +373,9 @@ async function switchTo(id: string): Promise<void> {
   setView("play");
 }
 
-function savedServerSub(sv: Snapshot["savedServers"][number]): string {
-  return sv.username ? `${t("saved_account", { name: sv.username })} · ${sv.host}:${sv.port}` : `${sv.host}:${sv.port}`;
+function savedServerSub(sv: Snapshot["savedServers"][number]): HTMLElement {
+  const address = blurred(`${sv.host}:${sv.port}`);
+  return sv.username ? h("span", {}, `${t("saved_account", { name: sv.username })} · `, address) : h("span", {}, address);
 }
 
 function savedServersCard(snap: Snapshot): HTMLElement | null {
@@ -396,17 +454,17 @@ function playConnect(snap: Snapshot): HTMLElement[] {
         card(
           "card-danger",
           h("h3", { class: "card-title" }, icon("shield"), t("connect_cert_subtitle")),
-          h("p", { class: "card-text" }, t("connect_cert_text", { host: sv.host })),
+          h("p", { class: "card-text" }, t("connect_cert_text", { host: hideText(sv.host) })),
           h("p", { class: "card-text" }, t("connect_cert_next")),
         ),
         foot,
       ];
     case "bad_answer":
-      return [eyebrow(snap), ...heading(t("connect_bad_title"), t("connect_bad_text", { host: sv.host, port: sv.port })), foot];
+      return [eyebrow(snap), ...heading(t("connect_bad_title"), t("connect_bad_text", { host: hideText(sv.host), port: sv.port })), foot];
     default:
       return [
         eyebrow(snap),
-        ...heading(t("connect_unreach_title", { name }), t(pub ? "connect_unreach_text_public" : "connect_unreach_text", { host: sv.host })),
+        ...heading(t("connect_unreach_title", { name }), t(pub ? "connect_unreach_text_public" : "connect_unreach_text", { host: hideText(sv.host) })),
         card(
           "",
           h(
@@ -556,7 +614,7 @@ function playInstall(snap: Snapshot): HTMLElement[] {
       h(
         "div",
         { class: "settings-row" },
-        h("div", { class: "settings-row-text" }, h("span", { class: "settings-row-title" }, t("install_folder")), h("span", { class: "settings-row-sub selectable" }, snap.install.dir)),
+        h("div", { class: "settings-row-text" }, h("span", { class: "settings-row-title" }, t("install_folder")), h("span", { class: "settings-row-sub selectable" }, secret(snap.install.dir, "install-dir"))),
         button(t("install_change"), () => void api.chooseInstallDir(), { icon: "folder", fk: "change-dir", disabled: snap.busy }),
       ),
       low ? h("div", { class: "hint hint-bad" }, icon("warning"), t("install_low_space")) : null,
@@ -926,7 +984,7 @@ function playerList(status: ServerStatus, max: number): HTMLElement {
       "li",
       { class: `player w-${p.where}` },
       h("span", { class: "player-avatar", "aria-hidden": "true" }, Array.from(p.name)[0]?.toUpperCase() ?? "?"),
-      h("span", { class: "player-text" }, h("span", { class: "player-name" }, p.name), h("span", { class: "player-where" }, where)),
+      h("span", { class: "player-text" }, h("span", { class: `player-name${streamer() ? " secret-blur" : ""}` }, streamer() ? filler(p.name) : p.name), h("span", { class: "player-where" }, where)),
     );
   });
   const list = h("ul", { class: "players" }, ...items);
@@ -1175,10 +1233,10 @@ function renderServer(): void {
     const sv = snap.server;
     const status = snap.status;
     const rows: [string, Node | string][] = [
-      [t("server_address"), h("span", { class: "mono" }, `${sv.host}:${sv.port}`)],
+      [t("server_address"), secret(`${sv.host}:${sv.port}`, "server-address", "mono")],
       [t("server_connection"), sv.mode === "public" ? t("server_connection_public") : t("server_connection_private")],
     ];
-    if (sv.fingerprint) rows.push([t("server_fingerprint"), h("span", { class: "fingerprint" }, groupedFingerprint(sv.fingerprint))]);
+    if (sv.fingerprint) rows.push([t("server_fingerprint"), secret(groupedFingerprint(sv.fingerprint), "server-fp", "fingerprint")]);
     if (status) {
       rows.push([t("server_registration"), status.registration ? tk(`reg_mode_${status.registration}`) : "–"]);
       rows.push([t("server_version"), [status.version, status.commit].filter(Boolean).join(" · ") || "–"]);
@@ -1214,7 +1272,7 @@ function renderServer(): void {
 
 // ------------------------------------------------------------------ settings page
 
-function settingsRow(title: string, sub: string | null, ...actions: (HTMLElement | null)[]): HTMLElement {
+function settingsRow(title: string, sub: string | Node | null, ...actions: (HTMLElement | null)[]): HTMLElement {
   return h(
     "div",
     { class: "settings-row" },
@@ -1363,7 +1421,7 @@ function renderSettings(): void {
         h('span',{class:'settings-row-sub'},t('set_region_text'))),huntRegion),
       settingsRow(
         t("set_folder"),
-        snap.install.dir,
+        secret(snap.install.dir, "install-dir"),
         button(t("set_change_folder"), () => void api.chooseInstallDir(), { icon: "folder", fk: "set-dir", disabled: busy }),
         button(t("set_open_folder"), () => void api.openGameFolder(), { fk: "set-open" }),
       ),
@@ -1411,7 +1469,7 @@ function renderSettings(): void {
             button(t("set_logout"), () => showModal({ kind: "logout" }), { cls: "btn-danger", fk: "set-logout", disabled: busy }),
           )
         : settingsRow(t("set_not_signed"), null),
-      snap.server ? settingsRow(t("set_server_current"), `${serverName()} (${snap.server.host}:${snap.server.port})`, button(t("set_add_server"), () => showModal({ kind: "leave" }), { fk: "set-leave", disabled: busy })) : null,
+      snap.server ? settingsRow(t("set_server_current"), h("span", {}, `${serverName()} (`, secret(`${snap.server.host}:${snap.server.port}`, "server-address"), ")"), button(t("set_add_server"), () => showModal({ kind: "leave" }), { fk: "set-leave", disabled: busy })) : null,
     );
 
     // The DLL keeps its log window hidden; players who troubleshoot can bring it back.
@@ -1441,6 +1499,14 @@ function renderSettings(): void {
         )
       : null;
 
+    const streamerSwitch = h("button", { type: "button", class: "switch", role: "switch", "aria-checked": streamer() ? "true" : "false", "aria-labelledby": "streamer-label", "data-fk": "streamer" });
+    streamerSwitch.addEventListener("click", () => void api.setSettings({ streamerMode: !streamer() }));
+    const streaming = card(
+      "settings-section",
+      h("h2", { class: "card-title" }, t("set_streaming")),
+      h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("span", { class: "settings-row-title", id: "streamer-label" }, t("set_streamer")), h("span", { class: "settings-row-sub" }, t("set_streamer_help"))), streamerSwitch),
+    );
+
     const about = card(
       "settings-section",
       h("h2", { class: "card-title" }, t("set_about")),
@@ -1459,7 +1525,7 @@ function renderSettings(): void {
       snap.app.updateReady ? h("div", { class: "card-row" }, button(t("update_restart"), () => void api.installUpdate(), { cls: "btn-primary", fk: "about-update", disabled: snap.game.running })) : null,
     );
 
-    return [h("div", { class: "page" }, h("h1", { class: "page-title", id: "settings-title" }, t("set_title")), game, graphics, language, account, otherServers, troubleshooting, about)];
+    return [h("div", { class: "page" }, h("h1", { class: "page-title", id: "settings-title" }, t("set_title")), game, graphics, language, account, otherServers, troubleshooting, streaming, about)];
   });
 }
 
@@ -1829,8 +1895,8 @@ function renderModal(): void {
   switch (m.kind) {
     case "invite":
       title = t("link_title", { name: m.name });
-      text = [h("p", { class: "modal-text" }, t("link_text", { name: m.name, host: m.host })), h("div", {}, modeBadge(m.mode))];
-      if (m.fp) text.push(h("p", { class: "modal-text mono" }, t("link_fingerprint", { fp: shortFingerprint(m.fp) })));
+      text = [h("p", { class: "modal-text" }, t("link_text", { name: m.name, host: hideText(m.host) })), h("div", {}, modeBadge(m.mode))];
+      if (m.fp) text.push(h("p", { class: "modal-text mono" }, t("link_fingerprint", { fp: hideText(shortFingerprint(m.fp)) })));
       if (state.snap?.server) text.push(h("p", { class: "modal-text" }, t("link_switch_note")));
       confirmLabel = t("link_join");
       onConfirm = async () => {
@@ -1844,7 +1910,7 @@ function renderModal(): void {
     case "cert_changed":
       title = t("certchg_title");
       text = [
-        h("p", { class: "modal-text" }, t("certchg_text", { host: m.host })),
+        h("p", { class: "modal-text" }, t("certchg_text", { host: hideText(m.host) })),
         h(
           "dl",
           { class: "fp-compare" },
@@ -2057,6 +2123,7 @@ async function loadExtras(snap: Snapshot): Promise<void> {
 
 function onSnapshot(snap: Snapshot): void {
   const langChanged = snap.settings.language !== state.lang;
+  const streamerChanged = snap.settings.streamerMode !== state.snap?.settings.streamerMode;
   const serverChanged = JSON.stringify(snap.server) !== JSON.stringify(state.snap?.server ?? null);
   state.snap = snap;
   state.lang = snap.settings.language;
@@ -2070,6 +2137,7 @@ function onSnapshot(snap: Snapshot): void {
   if (langChanged) {
     forceRender($("#view-play"));
   }
+  if (streamerChanged) refreshSecrets();
   // The game runs next to the launcher: the background holds still meanwhile (styles.css).
   $("#hero").classList.toggle("game-running", snap.game.running);
   renderAll();
