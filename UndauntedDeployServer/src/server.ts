@@ -3,6 +3,7 @@ import { IsPersistentWorldLivenessOn, StartupAndReportFailure } from "./controll
 import { RunWatchdog } from "./controllers/watchdog";
 import { logger } from "./logger";
 
+if(process.env.SERVER_ROLE === "database-only") throw new Error("Deploy service disabled on database-only node");
 const PORT = Number(process.env.PORT);
 // The deploy server has no authentication at all -- anyone who can reach it
 // can spawn game processes on this machine. It must never listen beyond

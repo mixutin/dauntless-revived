@@ -8,6 +8,22 @@ const body={GameMode:'ISLAND',GameArgs:'',HuntId:'hunt',ExpectedPlayers:['one','
 const main={host:'main',port:8762}, aus={host:'aus',port:8700};
 const load=async()=>({running:10,pending:1,limit:22});
 
+test('US stays regional for city, training and hunts, including failures',async()=>{
+ process.env.US_DEPLOYSERVER_URL='http://127.0.0.1:61041';
+ process.env.US_PUBLIC_HOST='us';
+ const us={host:'us',port:8900};
+ try {
+  const router=new RegionalRouter(load,async(url,request)=>{assert.equal(url.port,'61041');assert.deepEqual(request.ExpectedPlayers,body.ExpectedPlayers);return us;});
+  for(const GameMode of ['CITY','SHARED','ISLAND'])
+   assert.deepEqual(await router.launch({...body,GameMode},'us',async()=>{throw Error('Must not reach EU');}),us);
+  await assert.rejects(new RegionalRouter(load,async()=>undefined).launch(body,'us',async()=>main),CapacityUnavailable);
+  await assert.rejects(new RegionalRouter(load,async()=>main).launch(body,'us',async()=>main),/outside/);
+  await assert.rejects(new RegionalRouter(load,async()=>{throw Error('timeout');}).launch(body,'us',async()=>main),/timeout/);
+  delete process.env.US_DEPLOYSERVER_URL;
+  await assert.rejects(router.launch(body,'us',async()=>main),CapacityUnavailable);
+ } finally {delete process.env.US_DEPLOYSERVER_URL;delete process.env.US_PUBLIC_HOST;}
+});
+
 test('Germany stays regional for city, training and hunts; Main may overflow there',async()=>{
  process.env.GERMANY_DEPLOYSERVER_URL='http://127.0.0.1:61031';
  process.env.GERMANY_PUBLIC_HOST='germany';

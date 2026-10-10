@@ -24,7 +24,7 @@ matchmakingRouter.post("/handle-matchmaking-for-player", express.json(), async (
     const HuntId = Body.HuntId;
     const ExpectedPlayers = Body.ExpectedPlayers;
     const Region = Body.Region ?? 'main';
-    if (!['main', 'aus', 'ger', 'mixed'].includes(Region)) { res.status(400).json({error:'invalid_region'}); return; }
+    if (!['main', 'aus', 'ger', 'us', 'mixed'].includes(Region)) { res.status(400).json({error:'invalid_region'}); return; }
 
     const BadRequest = CheckMatchmakingRequest(GameMode, GameArgs, HuntId, ExpectedPlayers);
 

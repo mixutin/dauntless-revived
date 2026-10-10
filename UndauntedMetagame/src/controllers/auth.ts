@@ -1,3 +1,4 @@
+import {AuthEpoch} from "./keyrotation";
 import jwt, {JwtPayload} from "jsonwebtoken";
 import crypto from "crypto";
 import { GetDb } from "../db";
@@ -52,7 +53,8 @@ export async function GetUserIDForAPIKey(UserAPIKey: string){
 function SignMetagameJWTForUid(userId: string){
     if(BanFor(userId)) throw Error('account_banned');
     return jwt.sign({
-        userId: userId
+        userId: userId,
+        epoch: AuthEpoch(userId)
     }, PRIVKEY, {
         algorithm: "RS256",
         expiresIn: "24h",
@@ -67,6 +69,7 @@ function ValidateMetagameJWTAndGetPayload(token: string){
         issuer: "undaunted-metagame",
         audience: "undaunted-metagame"
     });
+    if(typeof payload === 'string' || typeof payload.userId !== 'string' || (payload.epoch ?? 0)!==AuthEpoch(payload.userId)) throw Error('session_revoked');
     if(typeof payload !== 'string' && BanFor(payload.userId)) throw Error('account_banned');
     return payload;
 }

@@ -24,7 +24,9 @@ export async function HasUndauntedMetagameAuth(req: Request, res: Response, next
             if(AuthHeader != undefined){ // Why this double-auth amalgam? Sometimes the client sends it's Bearer auth to the server, and the server makes reqs where the only userId identifying factor is that auth token. This fixes that up, so we have that context.
                 const Token = AuthHeader.slice("bearer ".length);
 
-                const Payload = ValidateMetagameJWTAndGetPayload(Token);
+                let Payload;
+                try { Payload = ValidateMetagameJWTAndGetPayload(Token); }
+                catch { res.status(401).send(); return; }
 
                 (req as any).AuthData = {
                     IsGameserver: true,

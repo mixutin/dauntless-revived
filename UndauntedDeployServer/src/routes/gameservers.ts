@@ -33,14 +33,14 @@ gameserversRouter.get("/gameservers", async (req, res) => {
         return;
     }
 
-    const [overflow, aus, germany] = await Promise.all([DescribeOverflowSnapshot(), DescribeAusSnapshot(), DescribeAusSnapshot('ger')]);
+    const [overflow, aus, germany, us] = await Promise.all([DescribeOverflowSnapshot(), DescribeAusSnapshot(), DescribeAusSnapshot('ger'), DescribeAusSnapshot('us')]);
     res.status(200);
     res.json({
         servers: [...DescribeGameservers().map(server => {
             const process=Gameservers.find(s=>s.id===server.id);
             return {...server, connectedPlayers: process ? (process.isRamsgate ? NativeCityOccupancy(process.processId,process.startTime) : NativeOccupancy(process.processId,process.startTime)) : undefined};
-        }), ...overflow.servers, ...aus.servers, ...germany.servers],
-        complete: overflow.complete && aus.complete && germany.complete,
+        }), ...overflow.servers, ...aus.servers, ...germany.servers, ...us.servers],
+        complete: overflow.complete && aus.complete && germany.complete && us.complete,
         capacity: {...huntAdmission.status(), cpu:cpuAdmission.status()}
     });
 });

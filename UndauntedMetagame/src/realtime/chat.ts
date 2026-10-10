@@ -1,3 +1,4 @@
+import {KeyRevocations} from '../controllers/keyrotation';
 import crypto from "node:crypto";
 import { createServer, IncomingMessage, Server as HttpServer } from "node:http";
 import type { Duplex } from "node:stream";
@@ -173,11 +174,13 @@ export class ChatServer {
     private readonly friendPresence?: FriendPresence;
     private readonly stopFriendshipListener?: () => void;
     private readonly ticker?: NodeJS.Timeout;
+    private readonly revokeKey=(uid:string)=>{for(const session of this.clients)if(session.Uid===uid)this.end(session,'replaced');};
     private nextId = 1;
     private nextPing = 1;
     private lastSweep = 0;
 
     constructor(Options: ChatOptions = {}) {
+        KeyRevocations.on("revoke",this.revokeKey);
         this.clock = Options.Clock ?? (() => Date.now());
         this.trace = Options.Trace === true;
         this.nickCheck = Options.NickCheck ?? "enforce";
@@ -245,6 +248,7 @@ export class ChatServer {
 
     // Shutdown: <close/> to every session, then whatever is still open is cut after 1 s
     async close(): Promise<void> {
+        KeyRevocations.off("revoke",this.revokeKey);
         if(this.ticker !== undefined){
             clearInterval(this.ticker);
         }

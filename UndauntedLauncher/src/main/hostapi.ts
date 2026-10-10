@@ -13,7 +13,7 @@ import { isPrivateModeHost } from "../shared/invite";
 
 const KEY_HEADER = "x-undaunted-user-api-key";
 
-export async function saveHuntRegion(ep: Endpoint, key: string, region: 'main' | 'aus' | 'ger'): Promise<boolean> {
+export async function saveHuntRegion(ep: Endpoint, key: string, region: 'main' | 'aus' | 'ger' | 'us'): Promise<boolean> {
   const res = await request(ep, '/undaunted/api/HuntRegion', {
     method:'POST', headers:statusHeaders(ep,key), body:JSON.stringify({region}), timeoutMs:10000,maxBytes:4096
   });

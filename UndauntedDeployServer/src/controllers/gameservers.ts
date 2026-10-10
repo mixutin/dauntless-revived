@@ -217,6 +217,7 @@ let NextServerLaunchAt = 0;
 export const huntAdmission = new HuntAdmission(() => Gameservers.filter(server => !server.isRamsgate && !server.isTrainingDojo && ProcessIsAlive(server.processId)).length);
 
 function StartServer(Map: string, Behemoth: string | undefined, MatchmakerHuntId: string | undefined, ExpectedPlayers: ExpectedPlayer[] | undefined, IsRamsgate: boolean, IsTrainingDojo: boolean){
+    if(process.env.SERVER_ROLE === "database-only") throw new Error("Game allocation disabled on database-only node");
     if (!IsRamsgate && !IsTrainingDojo) CheckCpuAdmission();
     const ReleaseHunt = !IsRamsgate && !IsTrainingDojo ? huntAdmission.reserve() : () => {};
     const Previous = ServerLaunchQueue;

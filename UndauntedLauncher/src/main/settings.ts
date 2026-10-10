@@ -17,7 +17,7 @@ export interface StoredServer {
 }
 
 export interface StoredSettings {
-  huntRegion?: 'auto' | 'main' | 'aus' | 'ger';
+  huntRegion?: 'auto' | 'main' | 'aus' | 'ger' | 'us';
   version: 1;
   server: StoredServer | null;
   savedServers: StoredServer[]; // servers joined before, to switch back without the invite
@@ -117,7 +117,7 @@ export function sanitizeSettings(raw: unknown, language: Language, platform: Nod
   s.windowed = raw.windowed === true;
   s.streamerMode = raw.streamerMode === true;
   s.showConsole = raw.showConsole === true;
-  if (raw.huntRegion === 'auto' || raw.huntRegion === 'main' || raw.huntRegion === 'aus' || raw.huntRegion === 'ger') s.huntRegion = raw.huntRegion;
+  if (raw.huntRegion === 'auto' || raw.huntRegion === 'main' || raw.huntRegion === 'aus' || raw.huntRegion === 'ger' || raw.huntRegion === 'us') s.huntRegion = raw.huntRegion;
   if (LANGUAGES.includes(raw.language as Language)) s.language = raw.language as Language;
   if (GAME_LANGUAGES.includes(raw.gameLanguage as GameLanguage)) s.gameLanguage = raw.gameLanguage as GameLanguage;
   if (isObject(raw.usernames)) {

@@ -616,7 +616,7 @@ export function RedeemStorePurchase(AccountId: string, Currency: string, Token: 
             }
             catch(error){
                 if(InventoryErrorOf(error) !== undefined){
-                    throw new StoreError(409, `The inventory refused the grant: ${(error as Error).message}`);
+                    throw new StoreError(409, "The inventory could not complete this purchase");
                 }
 
                 throw error;

@@ -7,6 +7,7 @@ import { GetHeldCurrencies, GetNotesForUser, OverlayHeldCurrencies } from "../co
 import { PlayerTokenOnly } from "../middleware/PlayerAuth";
 import { CreateStorePurchase, GetStoreOffer, IsAnyStoreEnabled, IsKnownStoreTag, IsStoreSkuEnabled, IsStoreTagEnabled, ListStoreOffers, RedeemStorePurchase, StoreError } from "../controllers/freestore";
 import { BalanceFromInventory } from "../features";
+import { PlayerMutationRateLimit } from "../middleware/RateLimits";
 
 export const storeRouter = Router();
 
@@ -232,7 +233,7 @@ storeRouter.get("/product/sku/:skuId", StoreSkuOn, HasUndauntedMetagameAuth, Pla
 });
 
 // StorePurchaseItemEndpoint: {purchaseToken}. Whatever else the request carries is ignored.
-storeRouter.get("/token/:currency/:skuId", StoreSkuOn, HasUndauntedMetagameAuth, PlayerTokenOnly, (req: any, res) => {
+storeRouter.get("/token/:currency/:skuId", StoreSkuOn, HasUndauntedMetagameAuth, PlayerTokenOnly, PlayerMutationRateLimit, (req: any, res) => {
     try{
         res.status(200);
         res.json(CreateStorePurchase(req.AuthData.userId, req.params.currency, req.params.skuId));
@@ -243,7 +244,7 @@ storeRouter.get("/token/:currency/:skuId", StoreSkuOn, HasUndauntedMetagameAuth,
 });
 
 // StorePurchaseItemConfirmEndpoint: redeems the token; 204, also for a token already redeemed
-storeRouter.post("/notification/:currency", StoreAnyOn, HasUndauntedMetagameAuth, PlayerTokenOnly, (req: any, res) => {
+storeRouter.post("/notification/:currency", StoreAnyOn, HasUndauntedMetagameAuth, PlayerTokenOnly, PlayerMutationRateLimit, (req: any, res) => {
     try{
         RedeemStorePurchase(req.AuthData.userId, req.params.currency, req.query.token);
         res.status(204);

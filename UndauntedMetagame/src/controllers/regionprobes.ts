@@ -1,8 +1,9 @@
 // Probes receive no credentials: the launcher measures TCP handshakes only.
 export function RegionProbes() {
-    return (['main','aus','ger'] as const).flatMap(region => {
+    return (['main','aus','ger','us'] as const).flatMap(region => {
         if (region === 'aus' && process.env.AUS_REGION !== '1') return [];
         if (region === 'ger' && process.env.GERMANY_REGION !== '1') return [];
+        if (region === 'us' && process.env.US_REGION !== '1') return [];
         const prefix = `REGION_${region.toUpperCase()}_PROBE`;
         const host = process.env[`${prefix}_HOST`];
         const port = Number(process.env[`${prefix}_PORT`] ?? 443);

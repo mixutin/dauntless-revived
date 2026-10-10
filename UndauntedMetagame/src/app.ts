@@ -1,4 +1,5 @@
 import express from "express";
+import {keyRotationRouter} from './routes/keyrotation';
 import {CheckPlayerAccess} from './controllers/moderation';
 import { TrackBackendHealth } from './middleware/BackendHealth';
 import { loginRouter } from "./routes/login.js";
@@ -59,6 +60,7 @@ if (process.env.LOG_BODIES === "1") {
 }
 
 app.use("/", loginRouter);
+app.use("/", keyRotationRouter);
 app.use("/", backupRouter);
 app.use("/", eosRouter);
 app.use("/", systemRouter);

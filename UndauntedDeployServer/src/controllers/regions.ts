@@ -1,11 +1,11 @@
 import { CapacityUnavailable } from './capacity';
 import { RemoteLaunch, ReadWorkerSnapshot, GameserverSnapshot } from './overflow';
 
-export type RegionChoice = 'main' | 'aus' | 'ger' | 'mixed';
+export type RegionChoice = 'main' | 'aus' | 'ger' | 'us' | 'mixed';
 type Request = Parameters<typeof RemoteLaunch>[1];
 type Load = {running:number,pending:number,limit:number|null};
-export function AusUrl(region: 'aus' | 'ger' = 'aus') {
-    const setting = region === 'ger' ? 'GERMANY_DEPLOYSERVER_URL' : 'AUS_DEPLOYSERVER_URL';
+export function AusUrl(region: 'aus' | 'ger' | 'us' = 'aus') {
+    const setting = region === 'us' ? 'US_DEPLOYSERVER_URL' : region === 'ger' ? 'GERMANY_DEPLOYSERVER_URL' : 'AUS_DEPLOYSERVER_URL';
     if (!process.env[setting]) return undefined;
     const url = new URL(process.env[setting]!);
     if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/' || url.search || url.hash)
@@ -15,13 +15,13 @@ export function AusUrl(region: 'aus' | 'ger' = 'aus') {
 export function Utilization(load: Load) {
     return load.limit && load.limit > 0 ? (load.running + load.pending) / load.limit : Infinity;
 }
-export async function DescribeAusSnapshot(region: 'aus' | 'ger' = 'aus'): Promise<GameserverSnapshot> {
+export async function DescribeAusSnapshot(region: 'aus' | 'ger' | 'us' = 'aus'): Promise<GameserverSnapshot> {
     const url = AusUrl(region);
     if (!url) return {servers: [], complete: true};
     const snapshot = await ReadWorkerSnapshot(url);
     return {...snapshot, servers: snapshot.servers.map(server => ({...server, host: region, region}))};
 }
-export async function DescribeAus(region: 'aus' | 'ger' = 'aus'): Promise<any[]> {
+export async function DescribeAus(region: 'aus' | 'ger' | 'us' = 'aus'): Promise<any[]> {
     return (await DescribeAusSnapshot(region)).servers;
 }
 export class RegionalRouter {
@@ -34,13 +34,14 @@ export class RegionalRouter {
             return body.capacity;
         }) {}
     async launch<T>(body: Request, choice: RegionChoice, main: () => Promise<T>): Promise<T | NonNullable<Awaited<ReturnType<typeof RemoteLaunch>>>> {
-        if (choice === 'ger') {
-            const germany = AusUrl('ger');
+        if (choice === 'ger' || choice === 'us') {
+            const germany = AusUrl(choice);
             if (!germany) throw new CapacityUnavailable('hunts');
             const connection = await this.remote(germany, body);
             if (!connection) throw new CapacityUnavailable('hunts');
-            if (process.env.GERMANY_PUBLIC_HOST && connection.host !== process.env.GERMANY_PUBLIC_HOST)
-                throw new Error('Germany worker returned a destination outside the selected region');
+            const expectedHost = process.env[choice === 'us' ? 'US_PUBLIC_HOST' : 'GERMANY_PUBLIC_HOST'];
+            if (expectedHost && connection.host !== expectedHost)
+                throw new Error('Regional worker returned a destination outside the selected region');
             return connection;
         }
         const primary = main;

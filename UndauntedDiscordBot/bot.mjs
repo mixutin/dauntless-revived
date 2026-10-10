@@ -1,3 +1,4 @@
+import {recoverInteraction,recoveryRequest,resendInteraction} from './recovery.mjs';
 import {findInviteMessage} from './dm-history.mjs';
 import { Client, Events, GatewayIntentBits, MessageFlags, REST } from 'discord.js';
 import { resolve, dirname, join } from 'node:path';
@@ -6,7 +7,7 @@ import {acquireInstance} from './instance.mjs';
 import { backend, Keys, loadState, saveState } from './keys.mjs';
 import { loadInviteConfig, inviteMessage } from './invite.mjs';
 import { syncKeyCommands } from './commands.mjs';
-import { keyInstructions } from './link-input.mjs';
+import { keyInstructions, linkInput } from './link-input.mjs';
 
 const token = process.env.DISCORD_BOT_TOKEN;
 // A live process is not necessarily a connected bot. Let the supervisor recover
@@ -79,18 +80,29 @@ client.on(Events.InteractionCreate, async interaction => {
     try {
       const subcommand = interaction.options.getSubcommand();
       stage=subcommand;
+      if(subcommand==='recover'){await recoverInteraction(interaction);return;}
+      if(subcommand==='resend'){await resendInteraction(interaction,keys,code=>inviteMessage(inviteConfig,code));return;}
       const claim = subcommand === 'claim';
-      const result = subcommand === 'link'
+      let result = subcommand === 'link'
         ? await keys.link(id, interaction.options.getString('key', true).trim())
         : claim ? await keys.deliver(id, code => interaction.user.send({content: inviteMessage(inviteConfig, code), allowedMentions: {parse: []}}), code => findInviteMessage(interaction.user, code))
         : await keys.run(id, false);
+      if(claim && ['dm_disabled','no_mutual_guild','delivery_uncertain'].includes(result.status)) {
+        if(interaction.ephemeral !== true) throw Error('Private acknowledgement required');
+        result = await keys.deliverPrivate(id, code => interaction.editReply({content:inviteMessage(inviteConfig,code),allowedMentions:{parse:[]}}));
+        if(result.status === 'private_sent') return;
+      }
+      if(subcommand==='link' && result.status==='linked' && process.env.KEY_RECOVERY_SERVICE_SECRET){
+        const proof=await recoveryRequest('link',id,{key:linkInput(interaction.options.getString('key',true)).key});
+        if(!proof.verified){await interaction.editReply('Account linked, but recovery verification did not complete. Retry /key link with the raw account key later.');return;}
+      }
       stage='reply';
       console.log(JSON.stringify({event:'key_result',status:result.status,at:new Date().toISOString()}));
       if (result.status === 'sent') console.log(JSON.stringify({event:'key_dm_sent',at:new Date().toISOString()}));
       {
         const messages = {
           sent: '🔑 **Invite Sent**\nCheck your DMs. Paste the complete invite into the launcher’s Join box.\n**Clear skies, Slayer.**',
-          already_sent: '🔑 **Already Claimed**\nYour invite has already been sent. Check your previous DMs; no additional key will be issued.',
+          already_sent: '🔑 **Already Claimed**\nUse `/key resend` to receive another private copy of your existing unused invite. No additional invite will be issued.',
           dm_disabled: 'Enable direct messages, then run `/key claim` again. Your existing code is saved.',
           no_mutual_guild: 'Join the Revived Discord server first, enable direct messages from server members, then run `/key claim` again. Discord cannot DM you without a shared server. Your existing invite is saved.',
           delivery_uncertain: 'Discord did not confirm delivery. Check your DMs, then contact the server team if missing. No replacement key will be issued.',
@@ -110,7 +122,7 @@ client.on(Events.InteractionCreate, async interaction => {
       }
     } finally { active.delete(id); }
   } catch (error) {
-    console.error(JSON.stringify({event:'key_interaction_failed',at:new Date().toISOString(),discordId:id,stage,frames:error.stack?.split('\n').slice(1,4),code:Number.isInteger(error.code)?error.code:undefined,status:Number.isInteger(error.status)?error.status:undefined,kind:['AbortError','TimeoutError','TypeError','SyntaxError'].includes(error.name)?error.name:'Error'})); // No tokens/codes/payloads.
+    console.error(JSON.stringify({event:'key_interaction_failed',at:new Date().toISOString(),discordId:id,stage,frames:error.stack?.split('\n').slice(1,4),code:Number.isInteger(error.code)||['ENOSPC','EACCES','EPERM','ENOENT','EIO','EMFILE'].includes(error.code)?error.code:undefined,status:Number.isInteger(error.status)?error.status:undefined,kind:['AbortError','TimeoutError','TypeError','SyntaxError'].includes(error.name)?error.name:'Error'})); // No tokens/codes/payloads.
     if (interaction.deferred) await interaction.editReply('The key service is unavailable. Please try again shortly.').catch(() => {});
   }
 });

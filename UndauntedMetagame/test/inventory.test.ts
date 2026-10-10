@@ -339,13 +339,13 @@ describe("Daily token top-ups", () => {
         assert.equal(StackQuantity(CharacterId, "TOKEN_BOUNTY_DRAFT"), 6);
     });
 
-    it("leaves other sources and other callers alone", async () => {
+    it("does not top up other sources and refuses forged player token grants", async () => {
         const {UserId, CharacterId} = await MakePlayer();
 
         await Run(UserId, CharacterId, "HuntReward", [Stack("TOKEN_BOUNTY_DRAFT", 2), Stack("TOKEN_DAILY_PATROL_BONUS", 1)]);
         await RunInventoryTransaction(UserId, CharacterId, Guid(), undefined, [Stack("TOKEN_BOUNTY_DRAFT", 3)], undefined, undefined, undefined, {Caller: "client", Source: "UBountyComponent::ServerInitializeBounties"});
 
-        assert.equal(StackQuantity(CharacterId, "TOKEN_BOUNTY_DRAFT"), 5);
+        assert.equal(StackQuantity(CharacterId, "TOKEN_BOUNTY_DRAFT"), 2);
         assert.equal(StackQuantity(CharacterId, "TOKEN_DAILY_PATROL_BONUS"), 1);
     });
 });

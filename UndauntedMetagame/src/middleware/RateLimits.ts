@@ -8,6 +8,14 @@ export const ClientRateLimitKey = (req: Request) => ipKeyGenerator(ClientAddress
 
 const Reply = { error: "rate_limited", message: "Too many requests; try again later." };
 
+// Authenticated players have separate buckets. Native reward batches are not
+// pooled behind one gateway-address quota.
+export const PlayerMutationRateLimit = rateLimit({
+    keyGenerator: req => `account:${(req as any).AuthData.userId}`,
+    skip: req => (req as any).AuthData?.IsGameserver === true,
+    windowMs: 60000, limit: 60, standardHeaders: 'draft-8', legacyHeaders: false, message: Reply
+});
+
 // Independent from mutations so dashboard polling cannot consume the admin write allowance.
 export const HealthReadRateLimit = rateLimit({keyGenerator: ClientRateLimitKey, windowMs: 60000, limit: 120, standardHeaders: 'draft-8', legacyHeaders: false, message: Reply});
 

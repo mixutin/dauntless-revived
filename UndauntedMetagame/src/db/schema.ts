@@ -1,6 +1,24 @@
 import { sql } from "drizzle-orm";
 import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
+export const recoveryproofs = sqliteTable('recoveryproofs', {
+    discordId: text('discordId').primaryKey().notNull(),
+    userId: text('userId').unique().notNull(),
+    keyHash: text('keyHash').notNull()
+});
+export const recoverychallenges = sqliteTable('recoverychallenges', {
+    tokenHash: text('tokenHash').primaryKey().notNull(), discordId: text('discordId').notNull(),
+    userId: text('userId'), keyHash: text('keyHash'), expiresAt: integer('expiresAt').notNull(),
+    used: integer('used').notNull().default(0)
+});
+export const authepochs = sqliteTable('authepochs', {
+    userId: text('userId').primaryKey().notNull(), epoch: integer('epoch').notNull().default(0)
+});
+export const recoveryevents = sqliteTable('recoveryevents', {
+    id: integer('id').primaryKey({autoIncrement:true}), discordId: text('discordId').notNull(),
+    action: text('action').notNull(), createdAt: integer('createdAt').notNull()
+}, table=>[index('recoveryevents_actor_time').on(table.discordId,table.createdAt)]);
+
 export const users = sqliteTable("users", {
     userId: text("userId").notNull().primaryKey(),
     name: text("name").notNull(),
@@ -28,8 +46,8 @@ export const discordlinks = sqliteTable('discordlinks', {
 
 export const huntregions = sqliteTable('huntregions', {
     userId: text('userId').notNull().primaryKey().references(() => users.userId),
-    region: text('region', {enum:['main','aus','ger']}).notNull()
-}, table => [check('huntregions_region', sql`${table.region} IN ('main', 'aus', 'ger')`)]);
+    region: text('region', {enum:['main','aus','ger','us']}).notNull()
+}, table => [check('huntregions_region', sql`${table.region} IN ('main', 'aus', 'ger', 'us')`)]);
 
 
 export const characters = sqliteTable("characters", {

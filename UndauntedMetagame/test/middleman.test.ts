@@ -45,7 +45,8 @@ async function Run(UserId: string, CharacterId: string, Id: string, Options: {
         Options.addStacked ?? [],
         Options.removeInstanced ?? [],
         Options.removeStacked ?? [],
-        Options.saveInstanced ?? []
+        Options.saveInstanced ?? [],
+        {Caller: "gameserver"} // Native-authorized fusion result, not a player grant.
     );
 }
 

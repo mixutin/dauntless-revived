@@ -120,7 +120,7 @@ describe("migrations after the last release (0013_guilds)", () => {
     it("the new migration files only create tables and indexes", () => {
         for(const Entry of NewEntries){
             // SQLite CHECK constraints require a table rebuild; covered with seeded rows below.
-            if (Entry.tag === '0022_germany_region') continue;
+            if (['0022_germany_region','0028_us_region'].includes(Entry.tag)) continue;
             const Sql = fs.readFileSync(path.join(MIGRATIONS, `${Entry.tag}.sql`), "utf8");
 
             // Explicit retention change: only legacy address observations may be deleted.
@@ -134,6 +134,23 @@ describe("migrations after the last release (0013_guilds)", () => {
                 assert.match(Statement, /^CREATE (TABLE|INDEX|UNIQUE INDEX) /, `${Entry.tag}: ${Statement.slice(0, 60)}`);
             }
         }
+    });
+
+    it('US migration preserves EU, OCE and Germany preferences and enforces ownership', () => {
+        const db = Open(path.join(Dir, 'us-regions.db'));
+        try {
+            db.$client.exec("CREATE TABLE users (userId text PRIMARY KEY); INSERT INTO users VALUES ('eu'), ('au'), ('de'), ('us'); PRAGMA foreign_keys=ON;");
+            db.$client.exec(fs.readFileSync(path.join(MIGRATIONS,'0020_hunt_regions.sql'),'utf8'));
+            db.$client.transaction(() => db.$client.exec(fs.readFileSync(path.join(MIGRATIONS,'0022_germany_region.sql'),'utf8')))();
+            db.$client.exec("INSERT INTO huntregions VALUES ('eu','main'),('au','aus'),('de','ger');");
+            const before = Rows(db,'huntregions');
+            db.$client.transaction(() => db.$client.exec(fs.readFileSync(path.join(MIGRATIONS,'0028_us_region.sql'),'utf8')))();
+            assert.deepEqual(Rows(db,'huntregions'), before);
+            db.$client.prepare('INSERT INTO huntregions VALUES (?,?)').run('us','us');
+            assert.throws(()=>db.$client.prepare('INSERT INTO huntregions VALUES (?,?)').run('missing','us'), /FOREIGN KEY/);
+            assert.throws(()=>db.$client.prepare('UPDATE huntregions SET region=? WHERE userId=?').run('unknown','us'), /CHECK/);
+            assert.deepEqual(db.$client.pragma('foreign_key_check'), []);
+        } finally {db.$client.close();}
     });
 
     it('Germany migration preserves existing preferences and enforces supported regions', () => {

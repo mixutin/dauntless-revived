@@ -97,6 +97,9 @@ function AssertValidIncomingInstancedItem(IncomingItem: any, Operation: string){
 }
 
 function AssertExistingInstancedItemWrite(CurrentItem: any, IncomingItem: any, Operation: string): "write" | "skip"{
+    if(CurrentItem.catalogId !== IncomingItem.catalogId){
+        throw new InventoryValidationError("An existing instance cannot change catalog identity");
+    }
     if(Operation !== "remove"){
         AssertValidIncomingInstancedItem(IncomingItem, Operation);
     }
@@ -400,6 +403,10 @@ function LogInstancedItem(Operation: string, Item: any): LogEntry{
 }
 
 export async function UpdateInstancedItem(CharacterId: string, UserId: string, InstanceId: string, CatalogId: string, ItemData: string | null | undefined, UpdateVersion: number, Context: InventoryContext = {Caller: "client"}): Promise<InventoryResult<any>>{
+    if(Context.Caller === "client"){
+        logger.warn({event: "inventory_authority_denied", userId: UserId, operation: "instance_update"});
+        return {success: false, error: "forbidden"};
+    }
     if(!await DoesCharacterBelongToUserId(UserId, CharacterId)){
         logger.error(`Specified characterId ${CharacterId} does not belong to user ${UserId}`);
         return {success: false, error: "forbidden"};
@@ -543,6 +550,13 @@ function AssertCharacterOwnedInTx(tx: Tx, UserId: unknown, CharacterId: unknown)
 // the checks, the inventory write, the item log and the stored result. Throws on a refusal, so the
 // caller's transaction rolls back and nothing is changed.
 function ApplyPreparedInventoryTransaction(tx: Tx, Prepared: PreparedInventoryTransaction, Context: InventoryContext): AppliedInventoryTransaction {
+    // Raw deltas are results, not player intentions. Only the authenticated native
+    // server or an internal purchase/reward controller may authorize them.
+    // Source is untrusted audit metadata and never upgrades this authority.
+    if(Context.Caller === "client"){
+        logger.warn({event: "inventory_authority_denied", userId: Prepared.Request.UserId, operation: "transaction"});
+        throw new InventoryForbiddenError("Player cannot authorize raw inventory deltas");
+    }
     const { Request, InstancedItemsToAdd, StackedItemsToAdd, InstancedItemsToRemove, StackedItemsToRemove, InstancedItemsToSave, DedupeKey, RequestHash } = Prepared;
     const { UserId, CharacterId, TransactionId } = Request;
 
