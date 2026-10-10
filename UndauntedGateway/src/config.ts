@@ -183,7 +183,7 @@ export function LoadGatewayConfig(Env: NodeJS.ProcessEnv = process.env): Gateway
             timeoutMs: 3_000,
             additionalUrls: (() => {
                 const Urls = (Optional(Env, "ALLOWLIST_ADDITIONAL_URLS") ?? "").split(",").map(Value => Value.trim()).filter(Boolean);
-                if (Urls.length > 3) throw new Error("At most three additional allowlist helpers are supported");
+                if (Urls.length > 4) throw new Error("At most four additional allowlist helpers are supported");
                 return Urls.map(Url => {
                     const Point = ParseLoopbackUrl(Url, "ALLOWLIST_ADDITIONAL_URLS");
                     return `http://${Point.host.includes(":") ? `[${Point.host}]` : Point.host}:${Point.port}`;
