@@ -42,6 +42,7 @@ const state = {
   news: [] as NewsItem[],
   newsSeen: false,
   serverMenu: false, // the rail's server switcher is open
+  settingsTab: "game" as SettingsTab, // the Settings page's open tab
   branding: { backgrounds: [], accent: null } as Branding,
   extrasFor: "",
   extrasAt: 0,
@@ -1317,11 +1318,35 @@ function dropdown<T extends string | number>(opts: { id: string; fk: string; val
   return wrap;
 }
 
+// A switch slides its knob first and saves after, because saving redraws the page with a new switch
+// already in place and the slide would never be seen.
+function onToggle(sw: HTMLElement, save: (on: boolean) => void): void {
+  sw.addEventListener("click", () => {
+    const on = sw.getAttribute("aria-checked") !== "true";
+    sw.setAttribute("aria-checked", on ? "true" : "false");
+    window.setTimeout(() => save(on), 220);
+  });
+}
+
+type SettingsTab = "game" | "graphics" | "account" | "launcher";
+const SETTINGS_TABS: SettingsTab[] = ["game", "graphics", "account", "launcher"];
+const SETTINGS_TAB_ICONS: Record<SettingsTab, IconName> = { game: "gamepad", graphics: "monitor", account: "user", launcher: "settings" };
+
+// A setting's long explanation sits behind a small info button: a tooltip on hover and on keyboard
+// focus, and the button's accessible name, so the page shows only the setting's name.
+function infoTip(text: string): HTMLElement {
+  return h("button", { type: "button", class: "info-tip", "aria-label": text, "data-tip": text }, icon("info"));
+}
+
+function infoRow(title: HTMLElement, text: string, control: HTMLElement): HTMLElement {
+  return h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("div", { class: "settings-row-head" }, title, infoTip(text))), control);
+}
+
 function renderSettings(): void {
   const container = $("#view-settings");
   const snap = state.snap;
   if (!snap) return;
-  const sig = JSON.stringify([state.lang, snap.settings, snap.install.dir, snap.account, snap.server, snap.savedServers, snap.app, snap.phase, snap.busy, !!snap.task]);
+  const sig = JSON.stringify([state.lang, state.settingsTab, snap.settings, snap.install.dir, snap.account, snap.server, snap.savedServers, snap.app, snap.phase, snap.busy, !!snap.task]);
   renderRegion(container, sig, () => {
     const busy = snap.busy || snap.task !== null || snap.game.running;
 
@@ -1343,7 +1368,7 @@ function renderSettings(): void {
     });
 
     const windowed = h("button", { type: "button", class: "switch", role: "switch", "aria-checked": snap.settings.windowed ? "true" : "false", "aria-labelledby": "windowed-label", "data-fk": "windowed" });
-    windowed.addEventListener("click", () => void api.setSettings({ windowed: !snap.settings.windowed }));
+    onToggle(windowed, (on) => void api.setSettings({ windowed: on }));
 
     type HuntRegion = 'auto' | 'main' | 'aus' | 'ger';
     const huntRegion = dropdown<HuntRegion>({
@@ -1358,9 +1383,7 @@ function renderSettings(): void {
     const game = card(
       "settings-section",
       h("h2", { class: "card-title" }, t("set_game")),
-      h('div',{class:'settings-row'},h('div',{class:'settings-row-text'},
-        h('label',{class:'settings-row-title',for:'hunt-region'},t('set_region')),
-        h('span',{class:'settings-row-sub'},t('set_region_text'))),huntRegion),
+      infoRow(h("label", { class: "settings-row-title", for: "hunt-region" }, t("set_region")), t("set_region_text"), huntRegion),
       settingsRow(
         t("set_folder"),
         snap.install.dir,
@@ -1373,9 +1396,9 @@ function renderSettings(): void {
     const graphics = card(
       "settings-section",
       h("h2", { class: "card-title" }, t("set_graphics")),
-      h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("label", { class: "settings-row-title", for: "gfx-select" }, t("set_graphics_level")), h("span", { class: "settings-row-sub" }, t("set_graphics_text"))), select),
-      h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("label", { class: "settings-row-title", for: "exposure-select" }, t("set_exposure")), h("span", { class: "settings-row-sub" }, t("set_exposure_text"))), exposure),
-      h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("span", { class: "settings-row-title", id: "windowed-label" }, t("set_windowed")), h("span", { class: "settings-row-sub" }, t("set_windowed_help"))), windowed),
+      infoRow(h("label", { class: "settings-row-title", for: "gfx-select" }, t("set_graphics_level")), t("set_graphics_text"), select),
+      infoRow(h("label", { class: "settings-row-title", for: "exposure-select" }, t("set_exposure")), t("set_exposure_text"), exposure),
+      infoRow(h("span", { class: "settings-row-title", id: "windowed-label" }, t("set_windowed")), t("set_windowed_help"), windowed),
     );
 
     const langRow = h("div", { class: "lang-switch", role: "group", "aria-label": t("set_language"), style: undefined });
@@ -1397,7 +1420,7 @@ function renderSettings(): void {
       "settings-section",
       h("h2", { class: "card-title" }, t("set_language")),
       langRow,
-      h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("label", { class: "settings-row-title", for: "game-language-select" }, t("set_game_language")), h("span", { class: "settings-row-sub" }, t("set_game_language_text"))), gameLanguage),
+      infoRow(h("label", { class: "settings-row-title", for: "game-language-select" }, t("set_game_language")), t("set_game_language_text"), gameLanguage),
     );
 
     const account = card(
@@ -1416,18 +1439,17 @@ function renderSettings(): void {
 
     // The DLL keeps its log window hidden; players who troubleshoot can bring it back.
     const showConsole = h("button", { type: "button", class: "switch", role: "switch", "aria-checked": snap.settings.showConsole ? "true" : "false", "aria-labelledby": "console-label", "data-fk": "show-console" });
-    showConsole.addEventListener("click", () => void api.setSettings({ showConsole: !snap.settings.showConsole }));
+    onToggle(showConsole, (on) => void api.setSettings({ showConsole: on }));
     const troubleshooting = card(
       "settings-section",
       h("h2", { class: "card-title" }, t("set_troubleshooting")),
-      h("div", { class: "settings-row" }, h("div", { class: "settings-row-text" }, h("span", { class: "settings-row-title", id: "console-label" }, t("set_show_console")), h("span", { class: "settings-row-sub" }, t("set_show_console_text"))), showConsole),
+      infoRow(h("span", { class: "settings-row-title", id: "console-label" }, t("set_show_console")), t("set_show_console_text"), showConsole),
     );
     // Other servers joined before: switch to one, or take it off the list (its key stays on this PC).
     const otherServers = snap.savedServers.some((sv) => !sv.current)
       ? card(
           "settings-section",
-          h("h2", { class: "card-title" }, t("saved_other_title")),
-          h("p", { class: "card-text" }, t("saved_other_text")),
+          h("div", { class: "settings-row-head card-title" }, h("h2", { class: "card-title-text" }, t("saved_other_title")), infoTip(t("saved_other_text"))),
           ...snap.savedServers
             .filter((sv) => !sv.current)
             .map((sv) =>
@@ -1459,7 +1481,35 @@ function renderSettings(): void {
       snap.app.updateReady ? h("div", { class: "card-row" }, button(t("update_restart"), () => void api.installUpdate(), { cls: "btn-primary", fk: "about-update", disabled: snap.game.running })) : null,
     );
 
-    return [h("div", { class: "page" }, h("h1", { class: "page-title", id: "settings-title" }, t("set_title")), game, graphics, language, account, otherServers, troubleshooting, about)];
+    // Tabs like the game's own settings menu: one group at a time instead of one long page.
+    const panels: Record<SettingsTab, (HTMLElement | null)[]> = {
+      game: [game],
+      graphics: [graphics],
+      account: [account, otherServers],
+      launcher: [language, troubleshooting, about],
+    };
+    const tabs = h("div", { class: "settings-tabs", role: "tablist", "aria-label": t("set_title") });
+    for (const tab of SETTINGS_TABS) {
+      const on = state.settingsTab === tab;
+      const b = h("button", { type: "button", class: "settings-tab", role: "tab", id: `set-tab-${tab}`, "aria-selected": on ? "true" : "false", "aria-controls": "settings-panel", tabindex: on ? "0" : "-1", "data-fk": `set-tab-${tab}`, title: t(`set_tab_${tab}`) }, icon(SETTINGS_TAB_ICONS[tab]), h("span", { class: "settings-tab-label" }, t(`set_tab_${tab}`)));
+      b.addEventListener("click", () => {
+        state.settingsTab = tab;
+        renderSettings();
+      });
+      b.addEventListener("keydown", (e) => {
+        const i = SETTINGS_TABS.indexOf(tab);
+        const next = e.key === "ArrowRight" ? SETTINGS_TABS[(i + 1) % SETTINGS_TABS.length] : e.key === "ArrowLeft" ? SETTINGS_TABS[(i + SETTINGS_TABS.length - 1) % SETTINGS_TABS.length] : null;
+        if (!next) return;
+        e.preventDefault();
+        state.settingsTab = next;
+        renderSettings();
+        document.getElementById(`set-tab-${next}`)?.focus();
+      });
+      tabs.appendChild(b);
+    }
+    const panel = h("div", { class: "settings-panel", id: "settings-panel", role: "tabpanel", "aria-labelledby": `set-tab-${state.settingsTab}` }, ...panels[state.settingsTab]);
+    // The tabs in a row on top, then one panel with every setting in its own row box.
+    return [h("div", { class: "page page-wide" }, h("h1", { class: "page-title", id: "settings-title" }, t("set_title")), h("div", { class: "settings-layout" }, tabs, panel))];
   });
 }
 

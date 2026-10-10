@@ -328,7 +328,7 @@ tai EasyAntiCheatin käynnistysohjelmaa. Suoralla käynnistyksellä EasyAntiChea
 **Mitä ruudulla tapahtuu:**
 
 - DLL:n lokiruutu (musta tekstiruutu) on piilossa pelatessa. Jos haluat nähdä sen ongelmatilanteessa,
-  ota käynnistimessä käyttöön Asetukset > Vianmääritys > "Näytä lokiruutu" ennen PELAA-painiketta.
+  ota käynnistimessä käyttöön Asetukset > Käynnistin > Vianmääritys > "Näytä lokiruutu" ennen PELAA-painiketta.
   Jos näytät sen, **jätä se auki**: konsoli-ikkunan sulkeminen lopettaa prosessin, johon se kuuluu,
   eli tässä tapauksessa pelin.
 - Ensimmäisellä kirjautumisellasi palvelin luo hahmosi, jolla on sama nimi kuin käyttäjänimelläsi, ja

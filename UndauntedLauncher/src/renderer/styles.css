@@ -317,6 +317,188 @@ img {
   }
 }
 
+/* Settings: tabs on top, one group at a time; long help behind an info tooltip. */
+/* The settings page uses the whole width: the tabs in a row on top, then one panel with a section
+   heading per group and every setting in its own row box. (.page.page-wide: .page comes later.) */
+.page.page-wide {
+  max-width: none;
+  container: settings / inline-size;
+}
+
+.settings-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-layout .settings-tabs {
+  margin: 0;
+}
+
+/* One panel holds the open tab's groups: the groups lose their own card frame and become sections. */
+.settings-panel {
+  padding: 18px 20px 20px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  gap: 22px;
+}
+
+.settings-panel > .card {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.settings-panel .card-title,
+.settings-panel .card-title-text {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dr-steel);
+}
+
+.settings-panel .settings-row {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.settings-panel .settings-row:hover,
+.settings-panel .settings-row:focus-within {
+  border-color: var(--edge);
+  background: color-mix(in srgb, var(--dr-deep) 45%, transparent);
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: var(--dr-ink);
+  border: 1px solid var(--line);
+}
+
+.settings-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--dr-steel);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-tab .icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.settings-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Narrow window: the tabs keep only their icons (the name stays as the tooltip and accessible name). */
+@container settings (max-width: 520px) {
+  .settings-tab-label {
+    display: none;
+  }
+}
+
+.settings-tab:hover {
+  color: var(--dr-frost);
+}
+
+.settings-tab[aria-selected="true"] {
+  background: var(--dr-deep);
+  color: var(--dr-frost);
+}
+
+.settings-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-row-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-title-text {
+  margin: 0;
+  font: inherit;
+}
+
+.info-tip {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dr-steel);
+  cursor: help;
+  flex: none;
+}
+
+.info-tip .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.info-tip:hover,
+.info-tip:focus-visible {
+  color: var(--dr-frost);
+}
+
+.info-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  z-index: 30;
+  width: max-content;
+  max-width: 340px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--edge);
+  background: var(--glass-strong);
+  color: var(--dr-frost);
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 8px 24px var(--shadow);
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+
+.info-tip:hover::after,
+.info-tip:focus-visible::after {
+  opacity: 1;
+}
+
 .nav-badge {
   margin-left: auto;
   width: auto;
@@ -2588,7 +2770,7 @@ img {
   height: 18px;
   border-radius: 50%;
   background: var(--dr-steel);
-  transition: transform 0.15s, background 0.15s;
+  transition: transform 0.22s cubic-bezier(0.3, 1.4, 0.5, 1), background 0.15s;
 }
 
 .switch:hover {

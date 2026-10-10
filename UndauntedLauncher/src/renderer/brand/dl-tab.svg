@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" width="200" height="40">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b6d9d"/>
+      <stop offset="0.45" stop-color="#11598a"/>
+      <stop offset="1" stop-color="#0c4a74"/>
+    </linearGradient>
+  </defs>
+  <!-- The game's settings tab: square corners, a dark rim, a petrol blue body and a bright top edge. -->
+  <rect x="0" y="0" width="200" height="40" fill="#0a1824"/>
+  <rect x="2" y="2" width="196" height="36" fill="url(#body)"/>
+  <rect x="3.2" y="3.2" width="193.6" height="33.6" fill="none" stroke="#3a8cc0" stroke-width="0.9" opacity="0.8"/>
+  <path d="M2 2.5 H198" fill="none" stroke="#72b0da" stroke-width="1.1"/>
+</svg>
