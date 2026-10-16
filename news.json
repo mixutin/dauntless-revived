@@ -2,8 +2,8 @@
   "items": [
     {
       "date": "2026-10-15T21:05:00-04:00",
-      "title": "Fair-play enforcement and anti-cheat work",
-      "body": "Moderators can now issue temporary account suspensions, with a seven-day default, recorded reasons, expiry and review history. Optional IP restrictions expire with the account suspension; shared connections require moderator review. Rubber-banding, falling through the map and lag alone are not grounds for automatic bans.\n\nAdditional server-side protection against privileged debug commands is staged for testing, not active yet. Attack-speed, stamina, movement-speed and frozen-monster cheats remain under investigation; this is not a claim that those cheats are fixed. No HWID requirement or automatic cheat bans are enabled. Please report suspected cheating with the player name, region, time and a recording when possible."
+      "title": "Fair-play enforcement and server hardening",
+      "body": "Moderators can now issue temporary account suspensions, with a seven-day default, recorded reasons, expiry and review history. Optional IP restrictions expire with the account suspension; shared connections require moderator review. Rubber-banding, falling through the map and lag alone are not grounds for automatic bans.\n\nA server-side guard against ten privileged debug commands is installed across the game fleet for newly started game processes. Existing hunts will pick it up when their processes are replaced. An isolated gameplay check confirmed normal attacks, dodges, sprint/stamina, monster attacks and character saves. Attack-speed, stamina, movement-speed and frozen-monster cheats remain under investigation; this is not a claim that those cheats are fixed. No HWID requirement or automatic cheat bans are enabled. Please report suspected cheating with the player name, region, time and a recording when possible."
     },
     {
       "date": "2026-10-08T13:50:37.337969+00:00",
