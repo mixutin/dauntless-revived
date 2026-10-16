@@ -1,6 +1,11 @@
 {
   "items": [
     {
+      "date": "2026-10-15T21:05:00-04:00",
+      "title": "Fair-play enforcement and anti-cheat work",
+      "body": "Moderators can now issue temporary account suspensions, with a seven-day default, recorded reasons, expiry and review history. Optional IP restrictions expire with the account suspension; shared connections require moderator review. Rubber-banding, falling through the map and lag alone are not grounds for automatic bans.\n\nAdditional server-side protection against privileged debug commands is staged for testing, not active yet. Attack-speed, stamina, movement-speed and frozen-monster cheats remain under investigation; this is not a claim that those cheats are fixed. No HWID requirement or automatic cheat bans are enabled. Please report suspected cheating with the player name, region, time and a recording when possible."
+    },
+    {
       "date": "2026-10-08T13:50:37.337969+00:00",
       "title": "Launcher 0.1.27 and hunt cleanup update",
       "body": "Launcher 0.1.27 includes the updated Middleman Craft/Purchase tabs and fusion claim fixes. All four game hosts now use faster cleanup for confirmed empty hunts and tutorials, with startup grace for loading players. Repeated tutorial requests share an allocation, and party membership has a bounded grace period during hunt loading. World player counts now use native connection counts when available. Restart the launcher to update. Please report any remaining party disconnects or failed hunts with your region, hunt name and time."
