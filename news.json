@@ -1,6 +1,11 @@
 {
   "items": [
     {
+      "date": "2026-10-16T01:55:00Z",
+      "title": "Launcher 0.1.35: optional device restrictions",
+      "body": "Launcher 0.1.35 adds support for moderator-controlled device restrictions. On Windows, Play reports the motherboard UUID and available TPM public-key hash to the selected server; supporting servers store keyed hashes rather than raw identifiers. A TPM is not required. These client-reported identifiers are spoofable, not hardware attestation or proof of cheating. Shared PCs require moderator review. Account/IP bans remain independent, and lag, rubber-banding or falling alone do not trigger automatic bans.\n\nThis update also corrects the integrity pin for the bundled native debug-command guard. Restart the launcher to update. Behemoth parts remaining visually attached after a rewarded break are being investigated; this release does not claim to fix that issue."
+    },
+    {
       "date": "2026-10-15T21:05:00-04:00",
       "title": "Fair-play enforcement and server hardening",
       "body": "Moderators can now issue temporary account suspensions, with a seven-day default, recorded reasons, expiry and review history. Optional IP restrictions expire with the account suspension; shared connections require moderator review. Rubber-banding, falling through the map and lag alone are not grounds for automatic bans.\n\nA server-side guard against ten privileged debug commands is installed across the game fleet for newly started game processes. Existing hunts will pick it up when their processes are replaced. An isolated gameplay check confirmed normal attacks, dodges, sprint/stamina, monster attacks and character saves. Attack-speed, stamina, movement-speed and frozen-monster cheats remain under investigation; this is not a claim that those cheats are fixed. No HWID requirement or automatic cheat bans are enabled. Please report suspected cheating with the player name, region, time and a recording when possible."
