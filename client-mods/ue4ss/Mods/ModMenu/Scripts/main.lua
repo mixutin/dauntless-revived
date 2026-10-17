@@ -35,7 +35,7 @@ local HIDDEN = {
 }
 -- Friendlier names for known mods (anything else shows its folder name).
 local DISPLAY = {BehemothHealthBars = "Behemoth Health Bars", BehemothTracker = "Behemoth Tracker",
-                  CraftStar = "Uncrafted Weapons"}
+                  CraftStar = "Uncrafted Weapons", LockOn = "Lock-on"}
 
 -- The SETTINGS section. Keys and defaults must match the mods that read them.
 local SETTINGS = {
@@ -49,6 +49,9 @@ local SETTINGS = {
         {name = "Gold",   color = {R = 1.00, G = 0.78, B = 0.20, A = 1}},
         {name = "Purple", color = {R = 0.72, G = 0.42, B = 1.00, A = 1}},
     }},
+    -- action setting: End runs it (the stored number counts the presses; the mod watches it)
+    -- shows: the setting holding the current key's code, written by the mod
+    {key = "lock_rebind", label = "Lock-on: change key", default = 0, action = "Press End", showsFile = "LockOn/key_label.txt"},
 }
 
 local MENU_X, MENU_Y = 40, 300          -- top-left of the panel (UI units)
@@ -353,10 +356,33 @@ local function DrawChoice(i, s)
     ui.switches[i] = {label = label, look = ch.name}
 end
 
+-- An action setting shows its current value where the switch would be (e.g. the chosen key,
+-- read from a file its mod keeps in its own folder), else what to press.
+local function ShownValue(s)
+    if not (s.showsFile and modsDir) then return nil end
+    local f = io.open(modsDir .. s.showsFile, "r")
+    if not f then return nil end
+    local v = f:read("*l")
+    f:close()
+    if v and v:match("%S") then return v:match("^%s*(.-)%s*$") end
+    return nil
+end
+
+local function DrawAction(i, s)
+    local shown = ShownValue(s)
+    local text, color = shown or s.action, shown and WHITE or GREY
+    local cur = ui.switches[i]
+    if cur and cur.look == text then return end
+    if cur and cur.label then Untrack(cur.label) end
+    local label = MakeLabelRight(text, TEXT_SIZE, color, MENU_X + PANEL_W - PAD_X, ui.rowY[i], 1003)
+    ui.switches[i] = {label = label, look = text}
+end
+
 local function DrawSwitch(i)
     local it = items[i]
     if not (ui and it and ui.rowY[i]) then return end
     if it.kind == "setting" and it.setting.choices then DrawChoice(i, it.setting) return end
+    if it.kind == "setting" and it.setting.action then DrawAction(i, it.setting) return end
     local on, pending = ItemState(it)
     local look = (on and "1" or "0") .. (pending and "p" or "")
     local cur = ui.switches[i]
@@ -535,6 +561,15 @@ end
 
 local function SwitchSetting(s)
     ModSettings.Load()
+    if s.action then
+        local n = ModSettings.GetNum(s.key, 0) + 1
+        if ModSettings.SetNum(s.key, n) then
+            log("action " .. s.key .. " (" .. n .. ")")
+        else
+            log("cannot write " .. ModSettings.FILE)
+        end
+        return
+    end
     if s.choices then
         local n = ModSettings.GetNum(s.key, s.default) % #s.choices + 1
         if ModSettings.SetNum(s.key, n) then
@@ -557,6 +592,8 @@ local function Switch()
     local it = items[cursor]
     if not it then return end
     if it.kind == "mod" then SwitchMod() else SwitchSetting(it.setting) end
+    -- an action hands the keyboard to its mod (e.g. "press a key"): close the menu
+    if it.kind == "setting" and it.setting.action then Close() return end
     if not ui then return end                 -- rebuilt or closed meanwhile
     DrawSwitch(cursor)
     RefreshHint()
