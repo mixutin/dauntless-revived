@@ -1,6 +1,11 @@
 {
   "items": [
     {
+      "date": "2026-10-17T00:14:11Z",
+      "title": "Server locale patch for part breaks",
+      "body": "A server-only patch now forces decimal-point parsing and en-US culture, addressing the reported decimal-comma locale problem with Behemoth part breaks. The updated DLL is installed on main, US and Germany for newly started hunts. Active hunts retain their previous DLL until they end; the additional EU host's rollout is pending connectivity.\n\nFrench, German and Italian parsing regression tests passed, and a fresh US hunt confirmed the new locale initialization with a connected player. A complete hosted tail-break visual still needs player confirmation. Please check a fresh Gnasher or Embermane hunt and report any part that still stays attached after breaking. This patch does not change rewards, matchmaking or the separate disconnect fix."
+    },
+    {
       "date": "2026-10-16T01:55:00Z",
       "title": "Launcher 0.1.35: optional device restrictions",
       "body": "Launcher 0.1.35 adds support for moderator-controlled device restrictions. On Windows, Play reports the motherboard UUID and available TPM public-key hash to the selected server; supporting servers store keyed hashes rather than raw identifiers. A TPM is not required. These client-reported identifiers are spoofable, not hardware attestation or proof of cheating. Shared PCs require moderator review. Account/IP bans remain independent, and lag, rubber-banding or falling alone do not trigger automatic bans.\n\nThis update also corrects the integrity pin for the bundled native debug-command guard. Restart the launcher to update. Behemoth parts remaining visually attached after a rewarded break are being investigated; this release does not claim to fix that issue."
