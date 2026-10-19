@@ -39,7 +39,10 @@ const state = {
   inviteText: "",
   revealed: new Set<string>(), // streamer mode: the values shown with the eye, until the launcher closes
   username: "",
-  keyFormOpen: false,
+  // Open, so someone returning with an account key sees the field and both buttons straight away.
+  // Behind a link it reads as though registering a new name is the only way in, and a returning
+  // player has no reason to look for a disclosure they have never opened.
+  keyFormOpen: true,
   offline: { phase: "stopped" } as OfflineStatus, // the local runtime's last status
   offlineView: false, // the Play page shows offline play instead of the online server
   offlineName: "", // the first-run offline username being typed
