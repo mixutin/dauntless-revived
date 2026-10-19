@@ -380,6 +380,22 @@ async function StartServerNow(Map: string, Behemoth: string | undefined, Matchma
         startTime: new Date()
     };
 
+    // One UDP port hosts one server. Reaching this point means the port was free and unbound, so
+    // any record still claiming it outlived its process: its exit was never observed, and because
+    // pids get reused the liveness check can keep saying it is alive indefinitely. A live host had
+    // four ports listed twice, each pair sharing one real process, and the older record of each
+    // pair is what the launcher shows as a world with nobody in it.
+    const Stale = Gameservers.filter((Server) => Server.port === Port);
+
+    if(Stale.length > 0){
+        for(const Server of Stale){
+            logger.warn(`Dropping a stale record for port ${Port}: pid ${Server.processId}, started ${Server.startTime.toISOString()}. Its process is gone but its exit was never seen.`);
+            SpawnedChildren.delete(Server.id);
+        }
+
+        Gameservers = Gameservers.filter((Server) => Server.port !== Port);
+    }
+
     Gameservers.push(NewGameserver);
     SpawnedChildren.set(Id,Child);
     Spawned();
