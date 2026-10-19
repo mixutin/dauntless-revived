@@ -1004,7 +1004,10 @@ function instanceCard(i: StatusInstance): HTMLElement {
       "div",
       { class: "instance-meta" },
       h("span", {}, i.maxPlayers > 0 ? t("inst_players", { n: i.players, max: i.maxPlayers }) : t("inst_players_nomax", { n: i.players })),
-      h("span", {}, t("inst_running", { time: formatRunningTime(i.startedAt, Date.now(), state.lang) })),
+      // When a world is empty, how long it has been empty is the useful fact; its age is not.
+      i.emptyForMs === null
+        ? h("span", {}, t("inst_running", { time: formatRunningTime(i.startedAt, Date.now(), state.lang) }))
+        : h("span", { class: "instance-empty" }, t("inst_empty", { time: formatRunningTime(new Date(Date.now() - i.emptyForMs).toISOString(), Date.now(), state.lang) })),
     ),
     h("div", { class: "instance-bar", "aria-hidden": "true" }, fill),
   );

@@ -22,6 +22,10 @@ export interface StatusInstance {
   players: number;
   maxPlayers: number;
   startedAt: string | null; // ISO string, or null when the server sent something unreadable
+  // How long this world has been observed with nobody in it, or null when it is not empty.
+  // startedAt is its age, which says nothing about occupancy: a hunt that emptied a moment ago
+  // is indistinguishable from one nobody ever joined.
+  emptyForMs: number | null;
 }
 
 export interface ServerStatus {
@@ -120,6 +124,7 @@ export function parseServerStatus(raw: unknown): ServerStatus | null {
         players: cleanInt(i.players, 0, 1000) ?? 0,
         maxPlayers: cleanInt(i.maxPlayers, 0, 1000) ?? 0,
         startedAt: cleanIso(i.startedAt),
+    emptyForMs: cleanInt(i.emptyForMs, 0, 86_400_000) ?? null,
       });
     }
   }

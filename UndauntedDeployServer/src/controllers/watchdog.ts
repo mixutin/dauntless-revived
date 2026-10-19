@@ -4,6 +4,12 @@ import { NativeOccupancy } from './nativeoccupancy';
 import { HuntLifetimeFromEnv } from './huntlifetime';
 const Lifetime=HuntLifetimeFromEnv();
 
+// For GET /gameservers. The watchdog owns the only instance that has been observing these
+// intervals, so the answer has to come from here rather than being recomputed per request.
+export function EmptyForMs(id:string, now=Date.now()){
+    return Lifetime.EmptyFor(id, now);
+}
+
 /**
  * TODO:
  * This watchdog is SUPER basic rn, only releases resources, the server itself handles cleaning itself up

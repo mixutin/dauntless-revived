@@ -152,9 +152,9 @@ describe("ServerStatus", () => {
             { name: "Echo", where: "hunt", instance: null }
         ]);
         assert.deepEqual(Status.instances, [
-            { id: "5c0a9e36-8a51-4c1b-9d7e-1f2a3b4c5d01", kind: "city", title: "Ramsgate", map: "ramsgate_01_persistent", behemoth: null, players: 1, maxPlayers: 32, startedAt: "2026-09-21T10:00:00.000Z" },
-            { id: "5c0a9e36-8a51-4c1b-9d7e-1f2a3b4c5d02", kind: "hunt", title: "Hunt: Lesser Embermane", map: "cora_jamima", behemoth: "Lesser Embermane", players: 1, maxPlayers: 4, startedAt: "2026-09-21T11:00:00.000Z" },
-            { id: "5c0a9e36-8a51-4c1b-9d7e-1f2a3b4c5d03", kind: "tutorial", title: "Tutorial", map: "dia_moss_triforce", behemoth: "Gnasher", players: 1, maxPlayers: 1, startedAt: "2026-09-21T11:30:00.000Z" }
+            { id: "5c0a9e36-8a51-4c1b-9d7e-1f2a3b4c5d01", kind: "city", title: "Ramsgate", map: "ramsgate_01_persistent", behemoth: null, players: 1, maxPlayers: 32, startedAt: "2026-09-21T10:00:00.000Z", emptyForMs: null },
+            { id: "5c0a9e36-8a51-4c1b-9d7e-1f2a3b4c5d02", kind: "hunt", title: "Hunt: Lesser Embermane", map: "cora_jamima", behemoth: "Lesser Embermane", players: 1, maxPlayers: 4, startedAt: "2026-09-21T11:00:00.000Z", emptyForMs: null },
+            { id: "5c0a9e36-8a51-4c1b-9d7e-1f2a3b4c5d03", kind: "tutorial", title: "Tutorial", map: "dia_moss_triforce", behemoth: "Gnasher", players: 1, maxPlayers: 1, startedAt: "2026-09-21T11:30:00.000Z", emptyForMs: null }
         ]);
 
         const Text = JSON.stringify(Status);

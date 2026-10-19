@@ -3,6 +3,7 @@ import { Router } from "express";
 import { DescribeGameservers, huntAdmission, Gameservers } from "../controllers/gameservers";
 import { NativeOccupancy, NativeCityOccupancy } from '../controllers/nativeoccupancy';
 import { DescribeOverflowSnapshot } from '../controllers/overflow';
+import { EmptyForMs } from '../controllers/watchdog';
 import { DescribeAusSnapshot } from '../controllers/regions';
 
 export const gameserversRouter = Router();
@@ -38,7 +39,11 @@ gameserversRouter.get("/gameservers", async (req, res) => {
     res.json({
         servers: [...DescribeGameservers().map(server => {
             const process=Gameservers.find(s=>s.id===server.id);
-            return {...server, connectedPlayers: process ? (process.isRamsgate ? NativeCityOccupancy(process.processId,process.startTime) : NativeOccupancy(process.processId,process.startTime)) : undefined};
+            // emptyForMs answers "how long has this been empty", which startedAt cannot: a hunt
+            // that emptied a moment ago is indistinguishable from one nobody ever joined.
+            // undefined for a world that is not empty, and for the persistent ones, which the
+            // lifetime policy never tracks.
+            return {...server, emptyForMs: EmptyForMs(server.id), connectedPlayers: process ? (process.isRamsgate ? NativeCityOccupancy(process.processId,process.startTime) : NativeOccupancy(process.processId,process.startTime)) : undefined};
         }), ...overflow.servers, ...aus.servers, ...germany.servers, ...us.servers],
         complete: overflow.complete && aus.complete && germany.complete && us.complete,
         capacity: {...huntAdmission.status(), cpu:cpuAdmission.status()}

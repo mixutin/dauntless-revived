@@ -57,6 +57,15 @@ export class HuntLifetime {
         return this.elapsed(this.emptySince,server.id,now,this.emptyMs)?'empty':undefined;
     }
 
+    // How long this instance has been continuously observed empty, or undefined when it is not
+    // empty or has not been seen empty yet. The launcher shows a world's age, which says nothing
+    // about whether anyone is in it: a hunt that ran for ten minutes and emptied a moment ago
+    // looks exactly like one that was never occupied.
+    EmptyFor(id:string, now=Date.now()): number|undefined {
+        const span=this.emptySince.get(id);
+        return span===undefined ? undefined : Math.max(0, now-span.since);
+    }
+
     private forget(id:string){this.emptySince.delete(id);this.silentSince.delete(id);}
 
     private elapsed(spans:Map<string,{since:number,last:number}>, id:string, now:number, needed:number) {

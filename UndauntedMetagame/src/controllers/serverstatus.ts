@@ -47,7 +47,8 @@ export type DeployGameserver = {
     matchmakerHuntId: string | null,
     expectedPlayers: string[],
     maxPlayers: number | null,
-    startedAt: string
+    startedAt: string,
+    emptyForMs?: number | null
 };
 
 export type StatusInstance = {
@@ -58,7 +59,10 @@ export type StatusInstance = {
     behemoth: string | null,
     players: number,
     maxPlayers: number,
-    startedAt: string
+    startedAt: string,
+    // How long this world has been observed with nobody in it. startedAt is its age, which says
+    // nothing about occupancy: a hunt that emptied a moment ago looks like one nobody ever joined.
+    emptyForMs: number | null
 };
 
 export type StatusPlayer = {
@@ -407,7 +411,8 @@ export async function BuildServerStatus(): Promise<ServerStatus> {
             players: Number.isSafeInteger(Server.connectedPlayers) && Server.connectedPlayers! >= 0
                 ? Server.connectedPlayers! : Counts.get(Server.id) ?? 0,
             maxPlayers: Server.maxPlayers ?? DEFAULT_MAX_PLAYERS[Server.kind],
-            startedAt: Server.startedAt
+            startedAt: Server.startedAt,
+            emptyForMs: Number.isSafeInteger(Server.emptyForMs) && Server.emptyForMs! >= 0 ? Server.emptyForMs! : null
         };
     });
 
