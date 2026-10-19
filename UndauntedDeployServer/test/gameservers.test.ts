@@ -4,7 +4,7 @@ import "./setup";
 import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Server } from "node:http";
-import { DescribeGameservers, Gameserver, Gameservers, GetTrialsData, KindOfGameserver, TRIAL_POOL, TRIAL_ROTATION_START, TrialBehemothForWeek, TrialSuffixForWeek, TrialWeekAt, ValidateTrialPool } from "../src/controllers/gameservers";
+import { DescribeGameservers, Gameserver, Gameservers, GetTrialsData, TrackGameserverForTests, KindOfGameserver, TRIAL_POOL, TRIAL_ROTATION_START, TrialBehemothForWeek, TrialSuffixForWeek, TrialWeekAt, ValidateTrialPool } from "../src/controllers/gameservers";
 import MatchmakerTable from "../src/vendor/matchmaker_hunts_table.json";
 import TrialsHardTable from "../src/vendor/trials_hard_table.json";
 import TrialsEliteTable from "../src/vendor/trials_elite_table.json";
@@ -211,7 +211,7 @@ describe("GET /gameservers", () => {
     });
 
     it("answers the running servers to a loopback caller", async () => {
-        Gameservers.push(Ramsgate, Hunt);
+        TrackGameserverForTests(Ramsgate); TrackGameserverForTests(Hunt);
         Listening = await new Promise<Server>((Resolve, Reject) => {
             const Started = app.listen(TEST_PORT, "127.0.0.1", (Error?: Error) => Error ? Reject(Error) : Resolve(Started));
         });

@@ -691,8 +691,15 @@ export function IsProcessAlive(ProcessId: number){
 }
 
 // Servers whose process has exited are left out at once (the watchdog frees them within a minute)
-export function DescribeGameservers(Servers: Gameserver[] = Gameservers, IsAlive: (ProcessId: number) => boolean = IsProcessAlive){
-    return Servers.filter((Server) => IsAlive(Server.processId)).map((Server) => {
+export function DescribeGameservers(Servers: Gameserver[] = Gameservers, IsAlive?: (ProcessId: number) => boolean){
+    // Without an explicit check (every caller outside tests) this uses the child handle rather than
+    // the pid, for the reason in IsGameserverAlive: a recycled pid otherwise keeps a dead instance
+    // in this list, which is what the launcher and dashboard show as a world with nobody in it.
+    const Alive = IsAlive === undefined
+        ? (Server: Gameserver) => IsGameserverAlive(Server)
+        : (Server: Gameserver) => IsAlive(Server.processId);
+
+    return Servers.filter(Alive).map((Server) => {
         const Kind = KindOfGameserver(Server);
         const [MapPath, ...Options] = Server.map.split("?");
         const GameMode = Options.find((Option) => Option.startsWith("game="))?.slice("game=".length);
@@ -743,8 +750,23 @@ export function StartupAndReportFailure(){
     });
 }
 
-// The watchdog's check, with the same stand-in as everything else here in tests
+// The watchdog's check, with the same stand-in as everything else here in tests.
+//
+// A process id on its own does not identify a process. Windows reuses pids, so once ours has
+// exited and the number has been handed to something else, kill(pid, 0) keeps succeeding and the
+// record never gets cleaned up. A live host had 23 instances listed against 8 real game processes,
+// the extras showing 0 players and ages of many hours.
+//
+// Our own child handle is the authoritative evidence: it is created with the process and removed
+// when its exit event fires. No handle means the process we started is gone, whatever the pid
+// says now. The pid check stays as a second condition for a child that has not reported exit yet.
 export function IsGameserverAlive(Server: Gameserver){
+    const Child = SpawnedChildren.get(Server.id);
+
+    if(Child === undefined || Child.exitCode !== null || Child.signalCode !== null){
+        return false;
+    }
+
     return ProcessIsAlive(Server.processId);
 }
 
@@ -827,6 +849,14 @@ export function UseProcessFunctionsForTests(Functions: {
     SpawnProcess = Functions.Spawn ?? spawn;
     ProcessIsAlive = Functions.IsAlive ?? ((ProcessId) => IsProcessAlive(ProcessId));
     PortIsBound = Functions.IsPortBound ?? (async () => false);
+}
+
+// Registers a server the way StartServerNow would, child handle included. Liveness now comes from
+// that handle, so a test that only pushes onto Gameservers describes a state the running server
+// never produces: every record it holds was created alongside its child.
+export function TrackGameserverForTests(Server: Gameserver, Running = true){
+    Gameservers.push(Server);
+    SpawnedChildren.set(Server.id, { exitCode: Running ? null : 0, signalCode: null } as ChildProcess);
 }
 
 export function ResetGameserversForTests(){
