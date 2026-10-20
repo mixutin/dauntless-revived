@@ -233,6 +233,16 @@
         } catch {cell.textContent='Recovery unavailable. Try again.';}
       };
       cell.append(document.createTextNode(' '),reveal);
+      // One click fills the grant panel with this account, so nobody has to retype a UID.
+      const give=document.createElement('button');give.textContent='Give items';
+      give.onclick=()=>{
+        const field=el('grantAccount');
+        if(!field)return;
+        field.value=account.id;
+        el('grantCard')?.scrollIntoView({block:'nearest'});
+        el('grantReference')?.focus();
+      };
+      if(el('grantAccount'))row.children[1].append(document.createTextNode(' '),give);
       if(!visible[i]?.developer)return;
       row.classList.add('developer-row');
       const role=row.children[2];role.textContent='';
@@ -319,6 +329,119 @@
     catch { el('inviteLink').select(); el('inviteStatus').textContent = 'Press Ctrl+C to copy the selected link.'; }
   };
   el('refreshLog').onclick = async () => { if (!key || !el('logs').value) return; try { el('logText').textContent = (await get(`/api/log?name=${encodeURIComponent(el('logs').value)}`)).text; } catch (error) { el('logText').textContent = error.message; } };
+  // ---- Giving items to a player ----
+  // Wrapped whole: if a selector here is missing because the page and this script are different
+  // versions, moderation and everything above it must still bind.
+  try {
+    let catalogue = [], catalogueState = 'idle';
+    const basket = new Map();
+    const MAX_ITEMS = 64, MAX_QUANTITY = 1000000;
+
+    function showItems() {
+      const needle = el('grantSearch').value.trim().toUpperCase(), group = el('grantGroup').value;
+      const found = catalogue.filter(item => (!group || item.group === group) && item.catalogId.includes(needle));
+      const shown = found.slice(0, 400);
+      const selector = el('grantItem'), chosen = selector.value;
+      selector.replaceChildren(...shown.map(item => {
+        const option = document.createElement('option');
+        option.value = item.catalogId;
+        option.textContent = `${item.catalogId} · ${item.group}`;
+        return option;
+      }));
+      if (shown.some(item => item.catalogId === chosen)) selector.value = chosen;
+      else if (shown.length) selector.selectedIndex = 0;
+      if (catalogueState !== 'ready') return;
+      el('grantCatalogStatus').textContent = found.length === shown.length
+        ? `${found.length} of ${catalogue.length} items. Double-click one to add it.`
+        : `First ${shown.length} of ${found.length} matches. Narrow the search.`;
+    }
+
+    async function loadCatalogue() {
+      if (!key || catalogueState === 'loading' || catalogueState === 'ready') return;
+      catalogueState = 'loading';
+      el('grantCatalogStatus').textContent = 'Loading the item catalogue…';
+      try {
+        const result = await get('/api/grant-catalog');
+        catalogue = Array.isArray(result.items) ? result.items : [];
+        catalogueState = catalogue.length ? 'ready' : 'idle';
+        showItems();
+        if (!catalogue.length) el('grantCatalogStatus').textContent = 'The backend returned no items.';
+      } catch (error) {
+        catalogueState = 'idle';
+        el('grantCatalogStatus').textContent = `${error.message} The metagame may need updating for the item catalogue route.`;
+      }
+    }
+
+    function showBasket() {
+      const rows = [...basket.values()];
+      table('grantRows', rows.map(item => [item.catalogId, String(item.quantity), item.kind === 'instanced' ? 'its own item' : 'a stack', '']));
+      Array.from(el('grantRows').children).forEach((row, index) => {
+        const remove = document.createElement('button');
+        remove.textContent = 'Remove';
+        remove.onclick = () => { basket.delete(rows[index].catalogId); showBasket(); };
+        row.children[3].append(remove);
+      });
+      el('grantSubmit').disabled = rows.length === 0;
+      el('grantSubmit').textContent = rows.length ? `Give ${rows.length} item${rows.length === 1 ? '' : 's'}` : 'Give these items';
+    }
+
+    // Only ids the backend listed: a typed id would be accepted by the inventory core and then sit
+    // in the player's bags as something the client cannot draw.
+    function add(catalogId, quantity) {
+      const known = catalogue.find(item => item.catalogId === catalogId);
+      if (!known) { el('grantStatus').textContent = `${catalogId} is not in this server's catalogue.`; return false; }
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) { el('grantStatus').textContent = `Quantity must be a whole number from 1 to ${MAX_QUANTITY}.`; return false; }
+      if (basket.size >= MAX_ITEMS && !basket.has(catalogId)) { el('grantStatus').textContent = `One grant carries at most ${MAX_ITEMS} different items.`; return false; }
+      basket.set(catalogId, {catalogId, quantity, kind: known.kind});
+      showBasket();
+      return true;
+    }
+
+    async function quickFill(prefix, quantity, label) {
+      await loadCatalogue();
+      const picked = catalogue.filter(item => item.group === 'material' && item.catalogId.startsWith(prefix));
+      if (!picked.length) { el('grantStatus').textContent = `No ${label} in this server's catalogue.`; return; }
+      for (const item of picked) add(item.catalogId, quantity);
+      el('grantStatus').textContent = `${picked.length} ${label} added at ${quantity} each.`;
+    }
+
+    el('grantSearch').oninput = showItems;
+    el('grantSearch').onfocus = () => void loadCatalogue();
+    el('grantGroup').onchange = showItems;
+    el('grantItem').ondblclick = () => el('grantAdd').click();
+    el('grantAdd').onclick = () => {
+      const chosen = el('grantItem').value;
+      if (!chosen) { el('grantStatus').textContent = 'Pick an item from the list first.'; return; }
+      if (add(chosen, Number(el('grantQuantity').value))) el('grantStatus').textContent = `${chosen} added to the list.`;
+    };
+    el('grantClear').onclick = () => { basket.clear(); showBasket(); el('grantStatus').textContent = 'List cleared.'; };
+    el('grantAllOrbs').onclick = () => void quickFill('ORB_', 50, 'orbs');
+    el('grantStones').onclick = () => void quickFill('GEM_', 50, 'upgrade stones');
+    el('grantSubmit').onclick = async () => {
+      const accountId = el('grantAccount').value.trim(), reference = el('grantReference').value.trim();
+      if (!/^UID-[A-Za-z0-9-]{1,100}$/.test(accountId)) { el('grantStatus').textContent = 'Enter the account ID — it starts with UID-.'; return; }
+      if (!/^[A-Za-z0-9_-]{1,64}$/.test(reference)) { el('grantStatus').textContent = 'Give the grant a reference: letters, digits, dash or underscore.'; return; }
+      if (!basket.size) return;
+      el('grantSubmit').disabled = true;
+      el('grantStatus').textContent = 'Granting…';
+      try {
+        const response = await fetch('/api/grant', {method: 'POST', headers: {'x-dashboard-key': key, 'content-type': 'application/json'},
+          body: JSON.stringify({accountId, reference, items: [...basket.values()].map(item => ({catalogId: item.catalogId, quantity: item.quantity}))}),
+          signal: AbortSignal.timeout(40000)});
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Grant refused (${response.status}).`);
+        if (result.replayed) {
+          el('grantStatus').textContent = `Nothing changed: ${accountId} already received the grant named "${reference}". Change the reference to give these items again.`;
+        } else {
+          el('grantStatus').textContent = `Given to ${accountId}: ${result.stacked} stacked and ${result.instanced} own item(s). It appears after their next inventory refresh.`;
+          basket.clear();
+        }
+      } catch (error) { el('grantStatus').textContent = error.message; }
+      finally { showBasket(); }
+    };
+    document.querySelector('[data-view="people"]')?.addEventListener('click', () => void loadCatalogue());
+    showBasket();
+  } catch (error) { console.error('The item grant panel did not bind', error); }
   setInterval(refresh, 5000);
   document.addEventListener('visibilitychange', refresh);
 })();
