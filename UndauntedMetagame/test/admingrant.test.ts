@@ -109,11 +109,12 @@ describe("admin item grants", () => {
         assert.equal(Instances(A.CharacterId).filter((Item) => Item.catalogId === "BNC_FABRIC_002").length, 3);
     });
 
-    it("refuses a cosmetic-looking id this build does not have, rather than writing an unusable row", async () => {
+    it("refuses an id this build does not have, rather than writing an unusable row", async () => {
         const A = await MakePlayer();
 
-        // Valid shape, real prefix, not in the 1.4.4 catalogue.
-        for(const CatalogId of ["AR_NOT_A_REAL_SET_CHEST", "WP_FROM_A_LATER_PATCH", "EM_INVENTED"]){
+        // Valid shape, real prefixes, not in this build: a misspelling, a later-version item, an
+        // invention, and an arcstone (which is from a later version of Dauntless entirely).
+        for(const CatalogId of ["AR_NOT_A_REAL_SET_CHEST", "WP_FROM_A_LATER_PATCH", "EM_INVENTED", "ORB_UMBRAL", "ARCSTONE_DULL", "COMPLETELY_MADE_UP"]){
             assert.throws(() => Grant(A.UserId, [{catalogId: CatalogId, quantity: 1}], `bad-${CatalogId}`),
                 (Error: unknown) => Error instanceof GrantError && Error.Status === 400, CatalogId);
         }
@@ -165,26 +166,46 @@ describe("admin item grants", () => {
 });
 
 describe("the grantable catalogue", () => {
-    it("lists this build's own ids, sorted, with no catalogue notes", () => {
+    it("covers the whole build, not just what the shop sells, sorted and without notes", () => {
         const Entries = GrantableCatalogEntries();
         const Ids = Entries.map((Entry) => Entry.catalogId);
 
-        assert.ok(Entries.length > 200, `only ${Entries.length} entries`);
+        // The store catalogues know about 250 ids. Everything else a player holds - break parts,
+        // potions, titles, cells, most cosmetics - never passes through the shop.
+        assert.ok(Entries.length > 3000, `only ${Entries.length} entries; the shop alone is about 250`);
         assert.deepEqual(Ids, [...Ids].sort((Left, Right) => Left < Right ? -1 : 1), "sorted");
         assert.equal(new Set(Ids).size, Ids.length, "no duplicates");
         assert.ok(!Ids.some((Id) => Id.startsWith("_")), "the json notes are not items");
 
         for(const Entry of Entries){
             assert.ok(Entry.kind === "stacked" || Entry.kind === "instanced", `${Entry.catalogId}: ${Entry.kind}`);
-            assert.ok(["currency", "material", "cell", "cosmetic", "consumable"].includes(Entry.group), `${Entry.catalogId}: ${Entry.group}`);
+            assert.ok(["currency", "material", "cell", "cosmetic", "consumable", "title", "other"].includes(Entry.group), `${Entry.catalogId}: ${Entry.group}`);
         }
 
-        // The things an owner actually hands out.
-        for(const Id of ["CURRENCY_NOTES", "CURRENCY_PLATINUM_UNIV", "ORB_FLAME", "ORB_TERRA", "GEM_ALPHA", "BNC_FABRIC_000"]){
+        // Every group an owner picks from has real contents.
+        for(const Group of ["currency", "material", "cell", "cosmetic", "consumable", "title"]){
+            assert.ok(Entries.filter((Entry) => Entry.group === Group).length > 0, Group);
+        }
+
+        // One of each kind of thing, including the categories the shop never sells.
+        for(const Id of [
+            "CURRENCY_NOTES", "CURRENCY_PLATINUM_UNIV", "CURRENCY_TOKEN_TRANSMOG",
+            "ORB_FLAME", "ORB_TERRA", "GEM_ALPHA", "GEM_HEROICPLUS",
+            "BREAK_ARMSTRONG_EPIC", "PART_AC_LEGENDARY_BLAZE", "GATHER_COMMON_01",
+            "CELL_AETHERVENT_E", "TITLE_1P_ARCSLAYER", "QI_ATTACK_SPEED_POTION",
+            "TOKEN_BOUNTY_DRAFT", "BNC_FABRIC_000", "CC_FACEHAIR_BRAIDEDBEARD"
+        ]){
             assert.ok(Ids.includes(Id), Id);
         }
 
-        // 1.4.4 has no arcstones and no umbral or radiant orb: later versions added them.
+        // A prefix rule would get these wrong: both kinds live under the same prefix.
+        const Kind = (Id: string) => Entries.find((Entry) => Entry.catalogId === Id)?.kind;
+        assert.equal(Kind("BREAK_ARMSTRONG_EPIC"), "stacked");
+        assert.equal(Kind("PART_AC_LEGENDARY_BLAZE"), "instanced");
+
+        // 1.4.4 has no arcstones and no umbral or radiant orb: later versions added them. Five
+        // orbs is the whole set, not a shortlist.
+        assert.equal(Ids.filter((Id) => Id.startsWith("ORB_")).length, 5, "1.4.4 has exactly five orbs");
         for(const Id of Ids){
             assert.ok(!/ARCSTONE|ORB_UMBRAL|ORB_RADIANT/.test(Id), `${Id} is not in this build`);
         }
@@ -192,10 +213,19 @@ describe("the grantable catalogue", () => {
 
     it("every id it offers is one a grant will accept", async () => {
         const A = await MakePlayer();
+        const Entries = GrantableCatalogEntries();
 
-        for(const Entry of GrantableCatalogEntries()){
-            const Result = Grant(A.UserId, [{catalogId: Entry.catalogId, quantity: 1}], `catalogue-${Entry.catalogId}`);
-            assert.equal(Entry.kind === "instanced" ? Result.instanced : Result.stacked, 1, Entry.catalogId);
+        // In batches of the grant's own limit: 3,000 separate transactions would dominate the run.
+        for(let Start = 0; Start < Entries.length; Start += 64){
+            const Batch = Entries.slice(Start, Start + 64);
+            const Result = Grant(A.UserId, Batch.map((Entry) => ({catalogId: Entry.catalogId, quantity: 1})), `catalogue-${Start}`);
+
+            assert.equal(Result.stacked, Batch.filter((Entry) => Entry.kind === "stacked").length, `batch at ${Start}: stacked`);
+            assert.equal(Result.instanced, Batch.filter((Entry) => Entry.kind === "instanced").length, `batch at ${Start}: instanced`);
         }
+
+        // Spot-check that the items really landed, each in the right form.
+        assert.equal(StackQuantity(A.CharacterId, "BREAK_ARMSTRONG_EPIC"), 1);
+        assert.equal(Instances(A.CharacterId).filter((Item) => Item.catalogId === "PART_AC_LEGENDARY_BLAZE").length, 1);
     });
 });

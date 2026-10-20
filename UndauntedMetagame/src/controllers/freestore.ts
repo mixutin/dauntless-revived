@@ -7,6 +7,7 @@ import { characters, inventory, storepurchases } from "../db/schema";
 import { logger } from "../logger";
 import { MiddlemanStore, StoreMode, StoreRepeatableTokens, TrialsStore } from "../features";
 import catalog from "../vendor/store_catalog.json";
+import itemCatalog from "../vendor/item_catalog.json";
 import curated30 from "../vendor/store_curated_30.json";
 import itemKinds from "../vendor/store_item_kinds.json";
 import ladyLuck from "../vendor/store_ladyluck.json";
@@ -225,36 +226,47 @@ export function GrantKind(CatalogId: string): "stacked" | "instanced" | undefine
     return Kind === "stacked" || Kind === "instanced" ? Kind : undefined;
 }
 
-// Every id an administrator can hand out by name, for the owner dashboard's picker. The point is
-// that the list comes from this build's own catalogues rather than from memory: an id typed from
-// a wiki for a later version of the game would be accepted by the inventory core and then show up
-// as an item the client cannot draw.
+// Every id an administrator can hand out by name, for the owner dashboard's picker.
 //
-// The materials are the ones this server's players actually hold. 1.4.4 has five orbs and two
-// upgrade stones; there is no arcstone of any kind, and no umbral or radiant orb - those are from
-// later versions of Dauntless.
-const MATERIAL_IDS = [
-    "ORB_FLAME", "ORB_FROST", "ORB_SHOCK", "ORB_TERRA", "ORB_PHYSICAL",
-    "GEM_ALPHA", "GEM_HEROIC"
-];
+// The point is that the list comes from this build's own data rather than from memory: the
+// inventory core accepts any string, so an id typed from a wiki for a later version of the game
+// would be stored happily and then sit in the player's bags as something the client cannot draw.
+//
+// vendor/item_catalog.json is the whole of it - 3,086 ids read out of the live server's own
+// inventories and ledger. The store catalogues below only cover what the shop sells, which is
+// about 250 ids; the rest (monster break parts, potions, titles, cells, most cosmetics) never
+// pass through the store and would otherwise be ungrantable.
+export type GrantableEntry = {catalogId: string, kind: "stacked" | "instanced", group: string};
 
-export function GrantableCatalogEntries(): {catalogId: string, kind: "stacked" | "instanced", group: string}[]{
-    const Entries = new Map<string, {catalogId: string, kind: "stacked" | "instanced", group: string}>();
+const CATALOG_ROWS = (itemCatalog as unknown as {items?: [string, string, string][]}).items ?? [];
+
+const LIVE_ITEM_KINDS = new Map<string, "stacked" | "instanced">(
+    CATALOG_ROWS.map(([CatalogId, Kind]) => [CatalogId, Kind === "instanced" ? "instanced" : "stacked"] as const)
+);
+
+// How an item must be delivered, for anything the store does not sell. Undefined means this build
+// has no record of the id at all.
+export function GrantableItemKind(CatalogId: string): "stacked" | "instanced" | undefined {
+    return GrantKind(CatalogId) ?? LIVE_ITEM_KINDS.get(CatalogId);
+}
+
+export function GrantableCatalogEntries(): GrantableEntry[]{
+    const Entries = new Map<string, GrantableEntry>();
 
     const Add = (CatalogId: string, Group: string, Fallback: "stacked" | "instanced" = "stacked") => {
-        if(Entries.has(CatalogId)){
-            return;
+        if(!Entries.has(CatalogId)){
+            Entries.set(CatalogId, {catalogId: CatalogId, kind: GrantableItemKind(CatalogId) ?? Fallback, group: Group});
         }
-
-        Entries.set(CatalogId, {catalogId: CatalogId, kind: GrantKind(CatalogId) ?? Fallback, group: Group});
     };
 
-    for(const Currency of Object.values(CURRENCY_FIELDS)){
-        Add(Currency.CatalogId, "currency");
+    for(const [CatalogId, Kind, Group] of CATALOG_ROWS){
+        Add(CatalogId, Group, Kind === "instanced" ? "instanced" : "stacked");
     }
 
-    for(const CatalogId of MATERIAL_IDS){
-        Add(CatalogId, "material");
+    // Anything the shop sells that nobody on this server has ever been given yet: valid to grant,
+    // but absent from the ledger, so the catalogue file does not have it.
+    for(const Currency of Object.values(CURRENCY_FIELDS)){
+        Add(Currency.CatalogId, "currency");
     }
 
     for(const CatalogId of MIDDLEMAN_CELL_IDS){

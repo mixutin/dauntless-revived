@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { inventory } from "../db/schema";
 import { GetActiveCharacter } from "./activecharacter";
-import { COSMETIC_PREFIXES, GrantKind } from "./freestore";
+import { GrantableItemKind } from "./freestore";
 import { ApplyInventoryTransactionInTx } from "./inventory";
 import type { Tx } from "./savehistory";
 
@@ -58,19 +58,18 @@ export function CheckGrantItems(Items: unknown): GrantItem[] {
     return Checked;
 }
 
-// Stacked unless the item catalogue says this one is instanced. GrantKind knows about cosmetics
-// and the repeatable consumables; materials, currencies and parts are all stacked, which is what
-// an unknown id falls back to.
+// Whether this id is delivered as a stack or as its own instance, from this build's own catalogue.
+// Getting it wrong writes a row the client cannot render, and a prefix rule is not good enough:
+// LT_, BNC_, AC_ and TITLE_ each contain both kinds.
 //
-// A cosmetic is the one case where falling back is wrong: most are instanced, so delivering one as
-// a stack writes a row the client cannot render. If an id looks like a cosmetic and the catalogue
-// does not say how it is granted, the id is misspelled or not in this build - refuse it rather
-// than write something unusable into the player's inventory.
+// An id the catalogue has never seen is refused rather than guessed at. The inventory core would
+// accept any string, so a misspelling or an id from a later version of Dauntless would otherwise
+// be stored and then sit in the player's bags as an item that cannot be drawn.
 function IsInstanced(CatalogId: string){
-    const Kind = GrantKind(CatalogId);
+    const Kind = GrantableItemKind(CatalogId);
 
-    if(Kind === undefined && COSMETIC_PREFIXES.some((Prefix) => CatalogId.startsWith(Prefix))){
-        throw new GrantError(400, `${CatalogId} is not in this build's cosmetic catalogue`);
+    if(Kind === undefined){
+        throw new GrantError(400, `${CatalogId} is not an item this server has`);
     }
 
     return Kind === "instanced";
