@@ -33,6 +33,10 @@ param(
     [int]$HealthTimeoutSec = 180
 )
 $ErrorActionPreference = 'Stop'
+# Run over SSH there is no console buffer for a progress bar, and every Invoke-WebRequest here
+# dies with 'Access is denied ... console output buffer' - which this script then reports as
+# GitHub not knowing the ref. Updating a server remotely is the normal case, so turn it off.
+$ProgressPreference = 'SilentlyContinue'
 . "$PSScriptRoot\DauntlessServer.Common.ps1"
 
 function Invoke-Kit([string]$Name, [string[]]$Arguments) {
@@ -175,7 +179,12 @@ try {
         try {
             Enable-DRTls12
             $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 60 -Uri ("https://api.github.com/repos/{0}/{1}/commits/{2}" -f $DRRepo.Owner, $DRRepo.Name, $refUsed) -Headers @{ Accept = 'application/vnd.github.sha' }
-            $commit = "$($r.Content)".Trim()
+            # Windows PowerShell 5.1 hands back .Content as a byte[] unless it decides the
+            # response is text, and "$([byte[]])" stringifies to "57 57 51 ..." - which fails the
+            # SHA check below and looks like an unknown ref. Decode it before reading it.
+            $body = $r.Content
+            if ($body -is [byte[]]) { $body = [Text.Encoding]::UTF8.GetString($body) }
+            $commit = "$body".Trim()
         } catch { Stop-DR "GitHub does not know the ref '$refUsed' ($($_.Exception.Message))." }
         if ($commit -notmatch '^[0-9a-f]{40}$') { Stop-DR "Could not resolve '$refUsed' to a commit." }
     }
