@@ -191,7 +191,7 @@ const CURRENCY_ALIASES: Record<string, string> = {
 
 // Which items the store may hand out at all: cosmetics, and the repeatable consumable. Anything else
 // (currencies, boosts, weapons proper) is refused even if an offer lists it.
-const COSMETIC_PREFIXES = ["AR_", "WP_", "EM_", "DYE_", "QI_FLARE_", "BNC_FABRIC_", "BNC_STANDARD_", "BNC_SIGIL_", "LT_"];
+export const COSMETIC_PREFIXES = ["AR_", "WP_", "EM_", "DYE_", "QI_FLARE_", "BNC_FABRIC_", "BNC_STANDARD_", "BNC_SIGIL_", "LT_"];
 
 // Consumables that may be bought any number of times: TOKEN_BOUNTY_DRAFT_PREMIUM is the
 // premium_bounty_token_id of /bounty/game-data, the kind that persists into the next season.
@@ -223,6 +223,52 @@ export function GrantKind(CatalogId: string): "stacked" | "instanced" | undefine
     const Kind = ITEM_KINDS[CatalogId];
 
     return Kind === "stacked" || Kind === "instanced" ? Kind : undefined;
+}
+
+// Every id an administrator can hand out by name, for the owner dashboard's picker. The point is
+// that the list comes from this build's own catalogues rather than from memory: an id typed from
+// a wiki for a later version of the game would be accepted by the inventory core and then show up
+// as an item the client cannot draw.
+//
+// The materials are the ones this server's players actually hold. 1.4.4 has five orbs and two
+// upgrade stones; there is no arcstone of any kind, and no umbral or radiant orb - those are from
+// later versions of Dauntless.
+const MATERIAL_IDS = [
+    "ORB_FLAME", "ORB_FROST", "ORB_SHOCK", "ORB_TERRA", "ORB_PHYSICAL",
+    "GEM_ALPHA", "GEM_HEROIC"
+];
+
+export function GrantableCatalogEntries(): {catalogId: string, kind: "stacked" | "instanced", group: string}[]{
+    const Entries = new Map<string, {catalogId: string, kind: "stacked" | "instanced", group: string}>();
+
+    const Add = (CatalogId: string, Group: string, Fallback: "stacked" | "instanced" = "stacked") => {
+        if(Entries.has(CatalogId)){
+            return;
+        }
+
+        Entries.set(CatalogId, {catalogId: CatalogId, kind: GrantKind(CatalogId) ?? Fallback, group: Group});
+    };
+
+    for(const Currency of Object.values(CURRENCY_FIELDS)){
+        Add(Currency.CatalogId, "currency");
+    }
+
+    for(const CatalogId of MATERIAL_IDS){
+        Add(CatalogId, "material");
+    }
+
+    for(const CatalogId of MIDDLEMAN_CELL_IDS){
+        Add(CatalogId, "cell");
+    }
+
+    // store_item_kinds.json carries notes under keys that start with an underscore.
+    for(const CatalogId of Object.keys(ITEM_KINDS)){
+        if(!CatalogId.startsWith("_") && GrantKind(CatalogId) !== undefined){
+            Add(CatalogId, COSMETIC_PREFIXES.some((Prefix) => CatalogId.startsWith(Prefix)) ? "cosmetic" : "consumable");
+        }
+    }
+
+    return [...Entries.values()].sort((Left, Right) => Left.catalogId < Right.catalogId ? -1 : 1);
 }
 
 // A repeatable offer sells consumables only; it is never "owned", and each purchase grants its full quantity

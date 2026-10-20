@@ -11,6 +11,9 @@ import { Router } from "express";
 import { DeleteInviteCode, GetAllUserIds, GetInviteCodes, GetRecentPlayerData, IsRegistrationMode, RegisterInviteCode, REGISTRATION_MODE, SetRegistrationMode } from "../controllers/undauntedapi";
 import { HasUndauntedUserApiKey } from "../middleware/HasUndauntedUserApiKey";
 import { HasUndauntedAdminApiKey } from "../middleware/HasUndauntedAdminApiKey";
+import { CheckGrantItems, GrantError, GrantItemsInTx } from "../controllers/admingrant";
+import { GrantableCatalogEntries } from "../controllers/freestore";
+import { InventoryErrorOf } from "../controllers/inventory";
 import { SignMetagameJWTForUid } from "../controllers/auth";
 import {ModerationInfo,SetAccountBan,EndPlayingAddress,ModerationLog} from '../controllers/moderation';
 import { GetCharacterIdsForUserId, GetSaveHistory, RollbackCharacter, RollbackError, RollbackLoadout } from "../controllers/savehistory";
@@ -542,6 +545,63 @@ undauntedApiRouter.post("/GrantEntitlement", HasUndauntedAdminApiKey, async (req
         UserId: UserId,
         Entitlements: Result
     });
+});
+
+// The ids an administrator can hand out, read from this build's own catalogues so the dashboard
+// offers real items rather than ids typed from memory.
+undauntedApiRouter.get("/GrantCatalog", HealthReadRateLimit, HasUndauntedAdminApiKey, (_req, res) => {
+    res.status(200).json({items: GrantableCatalogEntries()});
+});
+
+// {UserId, Items: [{catalogId, quantity}], Reference}. Grants items to the account's active
+// character: cosmetics, materials, currencies, anything in the catalogue. Reference makes the
+// grant repeatable-safe - sending the same one twice changes nothing the second time - so a
+// timed-out request can be retried without handing out the items again.
+undauntedApiRouter.post("/GrantItems", AdminMutationRateLimit, HasUndauntedAdminApiKey, async (req: any, res) => {
+    const UserId = req.body?.UserId;
+    const Reference = req.body?.Reference;
+
+    if(typeof UserId !== "string" || UserId.length === 0 || typeof Reference !== "string" || Reference.length === 0 || Reference.length > 128){
+        res.status(400).json({error: "UserId and Reference are required"});
+        return;
+    }
+
+    try{
+        const Items = CheckGrantItems(req.body?.Items);
+
+        const Result = GetDb().transaction((tx) => {
+            if(!DoesAccountExist(tx, UserId)){
+                return undefined;
+            }
+
+            const Granted = GrantItemsInTx(tx, UserId, Items, req.UndauntedUserInfo.UserId, Reference);
+
+            RecordProgressionEvent(tx, {AccountId: UserId, Caller: "admin", Route: "admin GrantItems", Body: req.body, Status: 200, Reply: Granted});
+
+            return Granted;
+        }, {behavior: "immediate"});
+
+        if(Result == undefined){
+            res.status(404).json({error: "No such account"});
+            return;
+        }
+
+        res.status(200).json({UserId, ...Result});
+    }
+    catch(error){
+        if(error instanceof GrantError){
+            res.status(error.Status).json({error: error.message});
+            return;
+        }
+
+        if(InventoryErrorOf(error) !== undefined){
+            res.status(409).json({error: "The inventory could not accept this grant"});
+            return;
+        }
+
+        logger.error(error, "Admin item grant failed");
+        res.status(500).json({error: "Grant failed"});
+    }
 });
 
 // {UserId, Entitlement}. A revoked default entitlement stays revoked until granted again.
