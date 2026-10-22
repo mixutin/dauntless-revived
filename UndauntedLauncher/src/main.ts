@@ -391,6 +391,7 @@ function registerIpc(c: Controller): void {
     return s === null ? { ok: false, error: { code: "key_invalid" } } : c.useExistingKey(s);
   });
   handle(IPC.importKeyFile, () => c.importKeyFile());
+  handle(IPC.joinFromBackupFile, () => c.joinFromBackupFile());
   handle(IPC.saveKeyBackup, () => c.saveKeyBackup());
   handle(IPC.dismissBackupOffer, () => c.dismissBackupOffer());
   handle(IPC.chooseInstallDir, () => c.chooseInstallDir());

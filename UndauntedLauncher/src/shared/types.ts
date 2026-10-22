@@ -262,6 +262,7 @@ export const IPC = {
   register: "dr:register",
   useExistingKey: "dr:use-existing-key",
   importKeyFile: "dr:import-key-file",
+  joinFromBackupFile: "dr:join-from-backup-file",
   saveKeyBackup: "dr:save-key-backup",
   dismissBackupOffer: "dr:dismiss-backup-offer",
   chooseInstallDir: "dr:choose-install-dir",

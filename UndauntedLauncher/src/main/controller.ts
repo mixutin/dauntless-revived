@@ -65,7 +65,7 @@ import { applyGameConfig } from "./engineini";
 import { locateExistingGame } from "./game-folder";
 import { buildLaunchArgs, describeLaunch, GameProcess, gameLocale, type LaunchRuntime, type SpawnFn } from "./launch";
 import { createRelayOwnerCheck } from "./relay-owner";
-import { backupFileText, KeyStore, KeyStoreError, serverId, type Encryptor, type KeySlot } from "./keystore";
+import { backupFileText, KeyStore, KeyStoreError, parseBackupFile, serverId, type Encryptor, type KeySlot } from "./keystore";
 import { SettingsStore, type StoredServer, type StoredSettings } from "./settings";
 import { freeBytes, missingVcRuntime } from "./system";
 import { fixedLinkUrl, isAllowedExternalUrl } from "./links";
@@ -825,6 +825,37 @@ export class Controller {
     const key = extractAccountKey(text);
     if (!key) return this.fail("key_invalid");
     return this.withBusy(() => this.adoptKey(key));
+  }
+
+  // A backup file names its server and holds the key: join that server and sign in, no invite
+  // needed. The certificate and the key are checked before anything changes, so a refused file
+  // leaves the current server as it was.
+  async joinFromBackupFile(): Promise<ActionResult> {
+    if (this.busy || this.task) return err("busy");
+    if (this.game.running) return this.fail("already_running");
+    const file = await this.p.chooseOpenFile();
+    if (!file) return err("cancelled");
+    let text: string;
+    try {
+      const st = await fsp.stat(file);
+      if (st.size > 8192) return this.fail("key_invalid");
+      text = await fsp.readFile(file, "utf8");
+    } catch {
+      return this.fail("key_invalid");
+    }
+    const backup = parseBackupFile(text);
+    if (!backup) return this.fail("key_invalid");
+    const { key, ...rest } = backup;
+    const server: StoredServer = { ...rest, share: null, code: null };
+    return this.withBusy(async () => {
+      const change = await this.certificateChange(server);
+      if (change) return this.fail("cert_changed", change.fp ?? "");
+      const info = await fetchUserInfo(endpointFor(server), key);
+      if (!info.ok) return this.fail(info.error, info.detail);
+      const joined = await this.join(server);
+      if (!joined.ok) return this.fail(joined.error.code, joined.error.detail);
+      return this.adoptKey(key);
+    });
   }
 
   private async adoptKey(key: string): Promise<ActionResult> {

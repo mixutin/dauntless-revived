@@ -18,7 +18,7 @@ import { Controller, type Platform } from "../src/main/controller";
 import { validateManifest, type GameManifest } from "../src/main/manifest";
 import { formatInvite } from "../src/shared/invite";
 import { setSink } from "../src/main/log";
-import { KeyStore } from "../src/main/keystore";
+import { backupFileText, KeyStore } from "../src/main/keystore";
 import { PortableOfflineSave, OFFLINE_KEY_SLOT } from "../src/main/offline-save";
 import { offlineLayout } from "../src/main/offline-layout";
 import { type OfflineSaveRuntime } from "../src/main/offline-save";
@@ -61,7 +61,7 @@ function temp(prefix: string): string {
 before(async () => {
   cert = makeTestCert();
   other = makeTestCert();
-  meta = new FakeMetagame({ name: "Friday Hunts", validCodes: new Set(["ABCD-EFGH-JKLM", "SECOND-CODE", "THIRD-CODE", "FOURTH-CODE", "FIFTH-CODE", "SIXTH-CODE", "EXPOSURE-CODE", "GAMELANG-CODE", "CONSOLE-CODE", "EXISTING-CODE", "PICKED-CODE", "SAVED-CODE"]) });
+  meta = new FakeMetagame({ name: "Friday Hunts", validCodes: new Set(["ABCD-EFGH-JKLM", "SECOND-CODE", "THIRD-CODE", "FOURTH-CODE", "FIFTH-CODE", "SIXTH-CODE", "EXPOSURE-CODE", "GAMELANG-CODE", "CONSOLE-CODE", "EXISTING-CODE", "PICKED-CODE", "SAVED-CODE", "BACKUP-CODE"]) });
   content = new FakeContentServer({ key: "unused", files });
   gateway = https.createServer({ cert: cert.certPem, key: cert.keyPem }, (req, res) => {
     gatewayRequests.push(`${req.method} ${req.url}`);
@@ -99,6 +99,7 @@ interface Harness {
   configDir: string;
   installDir: string;
   userData: string;
+  pick: (file: string | null) => void; // what the open-file dialog answers from now on
 }
 
 // userDataDir: reuse another harness's settings and keys (the launcher opened again).
@@ -120,6 +121,7 @@ function harness(relayPort = RELAY_PORT, userDataDir?: string, chooseFolder: Pla
   const userData = userDataDir ?? temp("dr-ctl-user-");
   const installDir = temp("dr-ctl-game-");
   const configDir = temp("dr-ctl-cfg-");
+  let openFile: string | null = null;
   const p: Platform = {
     collectDeviceSignals: async () => ({}),
     userDataDir: userData,
@@ -140,7 +142,7 @@ function harness(relayPort = RELAY_PORT, userDataDir?: string, chooseFolder: Pla
     exePin: { relativePath: EXE, sha256: sha256(files.find((f) => f.path === EXE)!.data) },
     chooseFolder,
     chooseSaveFile: async () => null,
-    chooseOpenFile: async () => null,
+    chooseOpenFile: async () => openFile,
     openExternal: async () => undefined,
     openPath: async () => undefined,
     emitSnapshot: (s) => {
@@ -158,7 +160,7 @@ function harness(relayPort = RELAY_PORT, userDataDir?: string, chooseFolder: Pla
     spawn: fakeSpawn,
   };
   const c = new Controller(p);
-  return { c, last: () => snap ?? c.snapshot(), spawns, child: () => child, configDir, installDir, userData, offlineStatuses, };
+  return { c, last: () => snap ?? c.snapshot(), spawns, child: () => child, configDir, installDir, userData, offlineStatuses, pick: (file) => { openFile = file; } };
 }
 
 function invite(fp: string, code = "ABCD-EFGH-JKLM"): string {
@@ -1272,6 +1274,47 @@ test("a status request still on its way when the player logs out (or forgets the
     assert.equal(hx.c.snapshot().status, null);
   } finally {
     await hx.c.shutdown();
+  }
+});
+
+test("a backup file joins its server and signs in without an invite; a refused file changes nothing", async () => {
+  const first = harness();
+  const second = harness();
+  try {
+    await first.c.init();
+    assert.deepEqual(await first.c.submitInvite(invite(cert.fingerprint, "BACKUP-CODE")), { ok: true });
+    assert.deepEqual(await first.c.register("Backup_1"), { ok: true, username: "Backup_1" });
+    const key = [...meta.users].find(([, u]) => u.username === "Backup_1")![0];
+    const backup = backupFileText({ key, username: "Backup_1", serverName: "Friday Hunts", host: "127.0.0.1", port: GATEWAY_PORT, fingerprint: cert.fingerprint, date: new Date() });
+    const dir = temp("dr-ctl-backup-");
+    const write = (name: string, text: string): string => {
+      writeFileSync(path.join(dir, name), text);
+      return path.join(dir, name);
+    };
+
+    await second.c.init();
+    const refused = async (file: string, code: string): Promise<void> => {
+      second.pick(file);
+      const r = await second.c.joinFromBackupFile();
+      assert.equal(r.ok ? "ok" : r.error?.code, code, file);
+      assert.equal(second.last().lastError?.code, code, "the error reaches the page");
+      assert.equal(second.last().server, null, "no server joined");
+      assert.equal(second.last().phase, "join");
+    };
+    await refused(write("not-a-backup.txt", "hello"), "key_invalid");
+    await refused(write("too-big.txt", backup + " ".repeat(8192)), "key_invalid");
+    await refused(write("unknown-key.txt", backup.replace(key, "UUK_" + "0".repeat(48))), "key_rejected");
+
+    second.pick(write("good.txt", backup));
+    assert.deepEqual(await second.c.joinFromBackupFile(), { ok: true });
+    const s = second.last();
+    assert.equal(s.server?.fingerprint, cert.fingerprint);
+    assert.equal(s.server?.hasPendingInvite, false);
+    assert.equal(s.account.username, "Backup_1");
+    assert.equal(s.phase, "install", "Register is skipped");
+  } finally {
+    await first.c.shutdown();
+    await second.c.shutdown();
   }
 });
 

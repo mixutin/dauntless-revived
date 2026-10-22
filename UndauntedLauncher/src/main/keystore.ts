@@ -8,8 +8,8 @@
 import { createHash } from "node:crypto";
 import { promises as fsp } from "node:fs";
 import path from "node:path";
-import { isValidFingerprint } from "../shared/invite";
-import { isPlausibleAccountKey } from "../shared/username";
+import { cleanServerName, isPrivateModeHost, isValidFingerprint, isValidHost, isValidPort, type Invite } from "../shared/invite";
+import { extractAccountKey, isPlausibleAccountKey } from "../shared/username";
 import { addSecret, removeSecret, log } from "./log";
 
 export interface Encryptor {
@@ -163,7 +163,22 @@ export function backupFileText(opts: {
     `Key: ${opts.key}`,
     "",
     "Keep this file private: anyone who has this key can play as you on this server.",
-    "To use it on another PC: Dauntless Revived Launcher > Join > Use an existing key > Load a backup file.",
+    "To use it on another PC: Dauntless Revived Launcher > Join > Load a backup file.",
     "",
   ].join("\r\n");
+}
+
+// Reads a file written by backupFileText (CRLF or LF line breaks). The server it names is checked
+// like an invite's: a public server needs its certificate, and plain HTTP stays inside the tailnet.
+export function parseBackupFile(text: string): (Omit<Invite, "code" | "share"> & { key: string }) | null {
+  const server = /^Server: (.*) \(([^()\s]+):(\d+)\)\s*$/m.exec(text);
+  const cert = /^Certificate:(.*)$/m.exec(text);
+  const key = extractAccountKey(text);
+  if (!server || !key) return null;
+  const name = cleanServerName(server[1]);
+  const host = server[2].toLowerCase();
+  const fp = cert ? cert[1].trim() : null;
+  if (name === null || !isValidHost(host) || !isValidPort(server[3])) return null;
+  if (fp !== null ? !isValidFingerprint(fp) : !isPrivateModeHost(host)) return null;
+  return { mode: fp !== null ? "public" : "private", host, port: Number(server[3]), fp, name, key };
 }

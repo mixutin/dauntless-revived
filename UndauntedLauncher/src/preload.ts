@@ -30,6 +30,7 @@ const api = {
   register: (username: string): Promise<RegisterOutcome> => ipcRenderer.invoke(IPC.register, String(username)),
   useExistingKey: (text: string): Promise<ActionResult> => ipcRenderer.invoke(IPC.useExistingKey, String(text)),
   importKeyFile: (): Promise<ActionResult> => ipcRenderer.invoke(IPC.importKeyFile),
+  joinFromBackupFile: (): Promise<ActionResult> => ipcRenderer.invoke(IPC.joinFromBackupFile),
   saveKeyBackup: (): Promise<ActionResult> => ipcRenderer.invoke(IPC.saveKeyBackup),
   dismissBackupOffer: (): Promise<void> => ipcRenderer.invoke(IPC.dismissBackupOffer),
   chooseInstallDir: (): Promise<ActionResult> => ipcRenderer.invoke(IPC.chooseInstallDir),

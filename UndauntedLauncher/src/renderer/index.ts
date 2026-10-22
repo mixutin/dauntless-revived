@@ -421,6 +421,7 @@ function playJoin(snap: Snapshot): HTMLElement[] {
       h("div", { class: "field" }, h("label", { class: "field-label", for: "invite-input" }, t("join_label")), inviteInput, invitePreview, inviteHint),
       h("p", { class: "small-print" }, t("join_next")),
     ),
+    card("", linkButton(t("join_backup_file"), () => void api.joinFromBackupFile(), { icon: "key", fk: "join-backup", disabled: snap.busy })),
   ];
 }
 
