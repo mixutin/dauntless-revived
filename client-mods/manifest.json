@@ -237,15 +237,21 @@
                       "keep":  false
                   },
                   {
+                      "path":  "ue4ss/Mods/LockOn/Scripts/main.lua",
+                      "sha256":  "875eebea49b671db5a77ca64895476861f705c73db705a778d827047671471e5",
+                      "size":  38777,
+                      "keep":  false
+                  },
+                  {
                       "path":  "ue4ss/Mods/ModMenu/Scripts/main.lua",
-                      "sha256":  "3b5de41871636d4e94b32ca516904739dacbb973e049aa5d916d2718ce7a1199",
-                      "size":  27026,
+                      "sha256":  "1f4c7440f9bdd2e3e391d12a13c34cfab256aeeb82bd9b08139a5c64a97f5509",
+                      "size":  28754,
                       "keep":  false
                   },
                   {
                       "path":  "ue4ss/Mods/mods.txt",
-                      "sha256":  "b4204bff94ce95caef3f00cabe7be3e3fc5f382597f9878aeb8cf4d19e9604b4",
-                      "size":  121,
+                      "sha256":  "07a68e9227db6450c21fb325e66bb1070c080f43479881b8798dfce1e6aec119",
+                      "size":  132,
                       "keep":  true
                   },
                   {

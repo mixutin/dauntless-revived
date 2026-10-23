@@ -1223,6 +1223,20 @@ const MODS: readonly { icon: IconName; name: StringKey; text: StringKey; use: St
   { icon: "settings", name: "mod_menu_name", text: "mod_menu_text", use: "mod_menu_use" },
 ];
 
+// Mods by anxo0, in their own section at the bottom of the page.
+const ANXO_MODS: readonly { icon: IconName; name: StringKey; text: StringKey; use: StringKey }[] = [
+  { icon: "eye", name: "mod_lock_name", text: "mod_lock_text", use: "mod_lock_use" },
+];
+
+function modCard(by: StringKey, m: { icon: IconName; name: StringKey; text: StringKey; use: StringKey }): HTMLElement {
+  return h("div", { class: "mod-card" },
+    h("span", { class: "mod-by" }, t(by)),
+    h("strong", { class: "mod-name" }, icon(m.icon), t(m.name)),
+    h("span", { class: "mod-text" }, t(m.text)),
+    h("span", { class: "mod-use" }, t(m.use)),
+  );
+}
+
 function renderMods(): void {
   renderRegion($("#view-mods"), state.lang, () => [
     h("div", { class: "page mods-page" },
@@ -1233,16 +1247,7 @@ function renderMods(): void {
         h("span", { class: "badge mods-badge" }, t("mods_badge")),
         h("h2", { class: "mods-title" }, t("mods_title")),
         h("p", { class: "card-text mods-intro" }, t("mods_intro")),
-        h("div", { class: "mods-grid" },
-          ...MODS.map((m) =>
-            h("div", { class: "mod-card" },
-              h("span", { class: "mod-by" }, t("mods_by")),
-              h("strong", { class: "mod-name" }, icon(m.icon), t(m.name)),
-              h("span", { class: "mod-text" }, t(m.text)),
-              h("span", { class: "mod-use" }, t(m.use)),
-            ),
-          ),
-        ),
+        h("div", { class: "mods-grid" }, ...MODS.map((m) => modCard("mods_by", m))),
       ),
       card("",
         h("h2", { class: "card-title" }, icon("info"), t("mods_notes_title")),
@@ -1251,6 +1256,14 @@ function renderMods(): void {
         h("p", { class: "small-print" }, t("mods_note_windows")),
       ),
       h("p", { class: "small-print mods-credit" }, t("mods_credit")),
+      card(
+        "mods-author",
+        h("span", { class: "badge mods-badge" }, t("mods_anxo_badge")),
+        h("h2", { class: "mods-title" }, t("mods_anxo_title")),
+        h("p", { class: "card-text mods-intro" }, t("mods_anxo_intro")),
+        h("div", { class: "mods-grid" }, ...ANXO_MODS.map((m) => modCard("mods_anxo_by", m))),
+      ),
+      h("p", { class: "small-print mods-credit" }, t("mods_anxo_credit")),
     ),
   ]);
 }
