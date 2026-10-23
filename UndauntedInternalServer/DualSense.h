@@ -309,6 +309,21 @@ inline void RumbleLoop() {
 
 // ------------------------------------------------------------------ reading
 
+// The engine (UE4's XInput interface) only checks which pads are connected when Windows reports a
+// device change, and asks once, right then: a DualSense plugged in or paired while the game runs is
+// opened here a moment later, so that one check misses it and the game never sees it. Once the pad
+// is answering, tell the game's windows that devices changed, and the engine checks again.
+inline BOOL CALLBACK NotifyWindow(HWND Window, LPARAM) {
+    DWORD Process = 0;
+    GetWindowThreadProcessId(Window, &Process);
+    if (Process == GetCurrentProcessId()) PostMessageW(Window, WM_DEVICECHANGE, 0x0007 /* DBT_DEVNODES_CHANGED */, 0);
+    return TRUE;
+}
+
+inline void TellGameAboutPad() {
+    EnumWindows(NotifyWindow, 0);
+}
+
 // Reads the pad on its own thread. Looks for one every second while none is connected.
 inline void ReaderLoop() {
     for (;;) {
@@ -324,6 +339,7 @@ inline void ReaderLoop() {
         HidD_GetFeature(Pad, Feature, 41);
 
         std::string Report(Length, '\0');
+        bool Announced = false;
         for (;;) {
             DWORD Read = 0;
             if (!ReadFile(Pad, Report.data(), Length, &Read, nullptr) || Read == 0) break;
@@ -331,6 +347,11 @@ inline void ReaderLoop() {
             if (!ParseReport(reinterpret_cast<const uint8_t*>(Report.data()), Read, F)) continue;
             MenuButtons(F);
             Publish(true, ToXInput(F));
+            // First good report of this connection: the XInput hook now answers for the pad.
+            if (!Announced) {
+                Announced = true;
+                TellGameAboutPad();
+            }
         }
         CloseHandle(Pad);
         AcquireSRWLockExclusive(&PadLock);
