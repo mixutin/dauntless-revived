@@ -204,12 +204,24 @@ export interface Snapshot {
   };
   task: TaskProgress | null;
   game: { running: boolean; relayPort: number | null };
+  playtime: Playtime;
   settings: Settings;
   app: { version: string; packaged: boolean; updateReady: boolean };
   status: ServerStatus | null;
   statusUnsupported: boolean; // the host answers but has no ServerStatus endpoint yet
   lastError: LauncherError | null;
   notice: NoticeCode | null;
+}
+
+// Time spent in the game: online as the server counted it for this account, offline on this PC.
+export interface Playtime {
+  onlineSeconds: number | null; // null: not signed in, or a server that does not count playtime
+  offlineSeconds: number; // finished offline sessions; the renderer adds the running one
+  sessions: number;
+  lastSessionSeconds: number;
+  lastPlayedAt: string | null;
+  sessionStartedAt: string | null; // set while the game runs
+  sessionOffline: boolean;
 }
 
 export interface NewsItem {

@@ -350,6 +350,7 @@ const EXPECTED_ROUTES = [
     "POST /undaunted/api/RenameUser [HasUndauntedAdminApiKey]",
     "GET /undaunted/api/ServerStatus [SoftAccountAuth]",
     "GET /undaunted/api/GetUserInfo [HasUndauntedUserApiKey]",
+    "GET /undaunted/api/Playtime [HasUndauntedUserApiKey]",
     "GET /undaunted/api/PrivateOnlineStats [HasUndauntedAdminApiKey]",
     "GET /undaunted/api/PublicOnlineStats [HasUndauntedUserApiKey]",
     "GET /undaunted/api/SaveHistory [HasUndauntedAdminApiKey]",

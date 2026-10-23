@@ -33,6 +33,7 @@ import { AdminMutationRateLimit, HealthReadRateLimit } from "../middleware/RateL
 import { BackendHealthEnabled, BackendRuntimeHealth } from '../middleware/BackendHealth';
 import { userapikeys, users } from '../db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { GetPlaytimeSeconds } from '../controllers/playtime';
 
 export const undauntedApiRouter = Router();
 
@@ -335,6 +336,13 @@ undauntedApiRouter.get("/ServerStatus", SoftAccountAuth, async (req, res) => {
 undauntedApiRouter.get("/GetUserInfo", HasUndauntedUserApiKey, async (req: any, res) => {
     res.status(200);
     res.json(req.UndauntedUserInfo);
+});
+
+// The caller's own time in the game, counted from its heartbeats (controllers/playtime.ts), for the
+// launcher. Only the account the key belongs to: there is no way to ask for someone else's.
+undauntedApiRouter.get("/Playtime", HasUndauntedUserApiKey, async (req: any, res) => {
+    res.status(200);
+    res.json({ PlaytimeSeconds: GetPlaytimeSeconds(req.UndauntedUserInfo.UserId) });
 });
 
 
