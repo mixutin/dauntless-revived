@@ -25,7 +25,7 @@ export async function checkDeviceSignals(ep: Endpoint,key:string,signals:import(
   } catch {return {ok:false,error:'server_error'};}
 }
 
-export async function saveHuntRegion(ep: Endpoint, key: string, region: 'main' | 'ger' | 'us' | 'sg'): Promise<boolean> {
+export async function saveHuntRegion(ep: Endpoint, key: string, region: 'main' | 'ger' | 'us' | 'sg' | 'au'): Promise<boolean> {
   const res = await request(ep, '/undaunted/api/HuntRegion', {
     method:'POST', headers:statusHeaders(ep,key), body:JSON.stringify({region}), timeoutMs:10000,maxBytes:4096
   });

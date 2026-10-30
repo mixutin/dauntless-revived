@@ -1511,12 +1511,12 @@ function renderSettings(): void {
     const windowed = h("button", { type: "button", class: "switch", role: "switch", "aria-checked": snap.settings.windowed ? "true" : "false", "aria-labelledby": "windowed-label", "data-fk": "windowed" });
     onToggle(windowed, (on) => void api.setSettings({ windowed: on }));
 
-    type HuntRegion = 'auto' | 'main' | 'ger' | 'us' | 'sg';
+    type HuntRegion = 'auto' | 'main' | 'ger' | 'us' | 'sg' | 'au';
     const huntRegion = dropdown<HuntRegion>({
       id: 'hunt-region',
       fk: 'hunt-region',
       value: snap.settings.huntRegion ?? 'auto',
-      options: [{ value: 'auto', label: t('region_auto') }, { value: 'main', label: t('region_main') }, { value: 'ger', label: t('region_ger') }, { value: 'us', label: t('region_us') }, { value: 'sg', label: t('region_sg') }],
+      options: [{ value: 'auto', label: t('region_auto') }, { value: 'main', label: t('region_main') }, { value: 'ger', label: t('region_ger') }, { value: 'us', label: t('region_us') }, { value: 'sg', label: t('region_sg') }, { value: 'au', label: t('region_au') }],
       onChange: (huntRegion) => void api.setSettings({ huntRegion }),
       disabled: busy,
     });
