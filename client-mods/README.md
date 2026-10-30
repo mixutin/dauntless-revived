@@ -12,6 +12,12 @@ Optional client-side mods, installed automatically next to the game exe (`Archon
 - **Uncrafted Weapons** (`CraftStar`): in the weapon crafting list, weapons you have never crafted get
   `>> ` in front of their name, in red, gold or purple (picked in the Mod Menu).
 
+- **Lock-on** (`LockOn`, by anxo0): Elden Ring style lock-on. Middle mouse click (R3 on a gamepad)
+  locks the camera onto the behemoth nearest the centre of the view and marks it with a white dot;
+  press again to release. While locked the Slayer faces it. The Mod Menu's "Lock-on: change key"
+  row picks other keys (kept in `ue4ss/Mods/LockOn/key.txt` on each PC). Unlike the others it
+  changes your own camera and facing while locked; nothing is sent to the server.
+
 - **PS5Icons**: PlayStation 5 button prompts and a DualSense picture for the Controls screen. They
   are not a UE4SS mod: the client DLL (`UndauntedInternalServer.dll`) shows them while a DualSense
   is connected. Based on "PS5 Button Icons and Controls" by Zacksly (CC BY 3.0, modified; see

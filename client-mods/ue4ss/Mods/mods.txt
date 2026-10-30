@@ -2,6 +2,7 @@ BehemothHealthBars : 1
 ModMenu : 1
 BehemothTracker : 1
 CraftStar : 1
+LockOn : 1
 
 
 ; Built-in keybinds, do not move up!
