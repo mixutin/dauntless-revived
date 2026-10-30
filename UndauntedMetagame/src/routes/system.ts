@@ -17,6 +17,7 @@ import { TouchPlayer } from "../controllers/party";
 import { RefuseUnlessGameserver } from "../middleware/GameServerOnly";
 import { TrialsError, UpdateLeaderboardProfile } from "../controllers/trials";
 import { BOUNTY_TOKENS_DAILY } from "../controllers/inventory";
+import { RecordPlaytimeBeat } from "../controllers/playtime";
 
 export const systemRouter = Router();
 
@@ -54,7 +55,10 @@ systemRouter.post("/heartbeat", HasUndauntedMetagameAuth, async (req: any, res) 
 	// (upstream stored it under the key undefined). A player's heartbeat also keeps them in
 	// their party (controllers/party.ts drops members nobody has heard from).
 	if(typeof UserId === "string"){
-		if(!req.AuthData.IsGameserver) RecordPlayingAddress(req,UserId);
+		if(!req.AuthData.IsGameserver){
+			RecordPlayingAddress(req,UserId);
+			RecordPlaytimeBeat(UserId);
+		}
 		await UpdatePlayerActivity(UserId, UserMap, req.body?.state);
 		TouchPlayer(UserId);
 	}

@@ -44,6 +44,11 @@ export const moderationevents = sqliteTable('moderation_events', {
     address:text('address'),active:integer('active').notNull(),createdAt:integer('created_at').notNull(),actor:text('actor').notNull(),expiresAt:integer('expires_at')
 });
 
+// Time each account spent in the game, counted from its client heartbeats (controllers/playtime.ts)
+export const accountplaytime = sqliteTable('account_playtime', {
+    accountId:text('account_id').notNull().primaryKey(),seconds:integer('seconds').notNull(),updatedAt:integer('updated_at').notNull()
+});
+
 export const discordlinks = sqliteTable('discordlinks', {
     discordId: text('discordId').notNull().primaryKey(),
     userId: text('userId').notNull().unique().references(() => users.userId),

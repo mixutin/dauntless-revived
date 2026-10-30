@@ -34,6 +34,15 @@ export function formatDuration(seconds: number | null, lang: Language = "en"): s
   return `${sec} s`;
 }
 
+// Total time played, in hours and minutes only: 547200 -> "152 h 0 min", 2700 -> "45 min"
+export function formatPlaytime(seconds: number, lang: Language = "en"): string {
+  const s = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h} ${lang === "fi" ? "t" : "h"} ${m} min`;
+  return `${m} min`;
+}
+
 export function formatPercent(done: number, total: number): number {
   if (!(total > 0)) return 0;
   return Math.max(0, Math.min(100, Math.floor((done / total) * 1000) / 10));

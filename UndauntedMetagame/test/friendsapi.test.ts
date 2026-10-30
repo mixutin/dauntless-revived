@@ -10,6 +10,7 @@ import { userapikeys, users } from "../src/db/schema";
 import { HashUserAPIKey } from "../src/controllers/auth";
 import { ClearServerStatusCache } from "../src/controllers/serverstatus";
 import { GetOnlinePlayerActivity } from "../src/controllers/undauntedapi";
+import { GetPlaytimeSeconds } from "../src/controllers/playtime";
 import { FakeDeployServer, StartFakeDeployServer, ThreeServers } from "./fakedeploy";
 import { FRIENDS_API_PORT, FRIENDS_DEPLOYSERVER_PORT } from "./friendsenv";
 
@@ -436,5 +437,20 @@ describe("player-visible replies", () => {
             assert.ok(Reply.status < 500, `${Path}: ${Reply.status}`);
             assert.doesNotMatch(Reply.text.replace(/\/undaunted\/api\//gi, "/"), /undaunted/i, Path);
         }
+    });
+});
+
+describe("GET /undaunted/api/Playtime", () => {
+    it("answers the key's own account and nothing else", async () => {
+        const Reply = await Call("GET", "/undaunted/api/Playtime", { key: Friend.key });
+
+        assert.equal(Reply.status, 200);
+        assert.deepEqual(Object.keys(Reply.json), ["PlaytimeSeconds"]);
+        assert.equal(Reply.json.PlaytimeSeconds, GetPlaytimeSeconds(Friend.userId));
+    });
+
+    it("refuses without a valid key", async () => {
+        assert.equal((await Call("GET", "/undaunted/api/Playtime")).status, 401);
+        assert.equal((await Call("GET", "/undaunted/api/Playtime", { key: "UUK_wrong" })).status, 401);
     });
 });

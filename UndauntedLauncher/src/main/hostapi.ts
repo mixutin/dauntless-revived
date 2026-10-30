@@ -166,6 +166,21 @@ export async function fetchUserInfo(ep: Endpoint, key: string): Promise<UserInfo
   return { ok: true, info: { userId, username, isAdmin: body.IsAdmin === true } };
 }
 
+// The account's time in the game as the server counted it from the game's heartbeats
+// (GET /undaunted/api/Playtime). null: a server without that route, or no answer.
+export async function fetchPlaytime(ep: Endpoint, key: string): Promise<number | null> {
+  if (!isPlausibleAccountKey(key)) return null;
+  try {
+    const res = await request(ep, "/undaunted/api/Playtime", { headers: { [KEY_HEADER]: key }, timeoutMs: 8000, maxBytes: 4096 });
+    if (res.status !== 200) return null;
+    const body = parseJsonBody(res);
+    const seconds = isObject(body) ? body.PlaytimeSeconds : null;
+    return typeof seconds === "number" && Number.isFinite(seconds) && seconds >= 0 ? Math.floor(seconds) : null;
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------- Content server
 
 // Public mode: is the host's content server behind the gateway? (HEAD /content/v1/manifest)

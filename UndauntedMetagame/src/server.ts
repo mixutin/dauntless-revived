@@ -10,6 +10,7 @@ import { StartChat } from "./realtime/chat";
 import { DescribeFeatures } from "./features";
 import { PruneExpiredStorePurchases } from "./controllers/freestore";
 import { CheckProgressionConfig } from "./controllers/progressionconfig";
+import { FlushPlaytime } from "./controllers/playtime";
 import { SetDailyTokensOnce } from "./controllers/inventory";
 
 const PORT = Number(process.env.PORT);
@@ -140,6 +141,7 @@ export function shutdown(): Promise<void> {
       });
     });
     await Promise.all([Closing, Chat?.close()]);
+    FlushPlaytime();
     GetDb().$client.close();
   })();
 }

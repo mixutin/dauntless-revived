@@ -51,6 +51,7 @@ import {
   fetchContentManifest,
   fetchNews,
   fetchServerStatus,
+  fetchPlaytime,
   fetchUserInfo,
   probeContent,
   registerAccount,
@@ -59,6 +60,7 @@ import {
 import { compareManifests, resolveInside, type GameManifest, type ManifestFile } from "./manifest";
 import { contentDownloadBase, DownloadError, DownloadJob } from "./downloader";
 import { AbortedError, hashFile, removePartFiles, verifyInstall, VerifiedCache } from "./verify";
+import { PlaytimeStore } from "./playtime";
 import { dllStatus, installPinnedDlls, DllError, win64Dir } from "./dlls";
 import { installClientMods } from "./client-mods";
 import { applyGameConfig } from "./engineini";
@@ -169,6 +171,8 @@ export class Controller {
   private saveTask: Promise<ActionResult> | null = null;
   private shuttingDown = false;
   private readonly verified: VerifiedCache;
+  private readonly playtime: PlaytimeStore;
+  private serverPlaytime: { sid: string; seconds: number } | null = null; // GET /undaunted/api/Playtime
 
   private reachable: boolean | null = null;
   private checking = false;
@@ -211,8 +215,15 @@ export class Controller {
     this.offlineKeys = new KeyStore(path.join(p.userDataDir, "keys"), p.encryptor);
     this.game = new GameProcess(p.spawn);
     this.verified = new VerifiedCache(path.join(p.userDataDir, "verified-files.json"));
+    this.playtime = new PlaytimeStore(path.join(p.userDataDir, "playtime.json"));
     this.game.onChange((running, code) => {
       log.info(running ? "game started" : `game exited (code ${code ?? "none"})`);
+      if (running) this.playtime.start(this.offlineSession !== null);
+      else {
+        const online = this.offlineSession === null;
+        void this.playtime.stop();
+        if (online) void this.refreshServerPlaytime();
+      }
       if (!running) {
         const end=this.endPlayingSession; this.endPlayingSession=null;
         if(end) void end().catch(()=>{});
@@ -351,6 +362,7 @@ export class Controller {
       },
       task: this.task,
       game: { running: this.game.running, relayPort: this.relay?.port ?? null },
+      playtime: { ...this.playtime.view(), onlineSeconds: this.serverPlaytime !== null && this.serverPlaytime.sid === sid ? this.serverPlaytime.seconds : null },
       settings: { graphics: this.s.graphics, exposure: this.s.exposure, windowed: this.s.windowed, language: this.s.language, gameLanguage: this.s.gameLanguage, streamerMode: this.s.streamerMode, showConsole: this.s.showConsole, ...(this.s.huntRegion ? {huntRegion:this.s.huntRegion} : {}) },
       app: { version: this.p.appVersion, packaged: this.p.packaged, updateReady: this.updateReady },
       status: this.status,
@@ -611,6 +623,7 @@ export class Controller {
     const info = await fetchUserInfo(ep, key);
     if (info.ok) {
       this.keyRejected = false;
+      void this.refreshServerPlaytime();
       if (this.s.usernames[sid] !== info.info.username) {
         await this.settings.update((s) => {
           s.usernames[sid] = info.info.username;
@@ -624,6 +637,33 @@ export class Controller {
       this.lastError = { code: "key_rejected" };
       log.warn("the server does not accept the stored key");
     }
+  }
+
+  // The signed-in account's online playtime from the server, after the key check and each online game.
+  private async refreshServerPlaytime(): Promise<void> {
+    const ep = this.endpoint();
+    const slot = this.slot();
+    const sid = this.sid();
+    if (!ep || !slot || !sid) return;
+    let key: string | null = null;
+    try {
+      key = await this.keys.load(slot);
+    } catch {
+      key = null;
+    }
+    if (!key) return;
+    const seconds = await fetchPlaytime(ep, key);
+    if (seconds === null || this.sid() !== sid) return;
+    this.serverPlaytime = { sid, seconds };
+    this.publish();
+  }
+
+  // Offline hours live in the offline save; its local server counts them like any server.
+  private async readOfflinePlaytime(ep: Endpoint, key: string): Promise<void> {
+    const seconds = await fetchPlaytime(ep, key);
+    if (seconds === null) return;
+    await this.playtime.setOfflineSeconds(seconds);
+    this.publish();
   }
 
   // ------------------------------------------------------------------ status polling, news, art
@@ -1378,6 +1418,7 @@ export class Controller {
 
       const ep = offlineSession.endpoint;
       const key = account.key;
+      await this.readOfflinePlaytime(ep, key);
 
       this.setOfflineStatus({ phase: "launching-game" });
 
@@ -1390,6 +1431,7 @@ export class Controller {
             this.setOfflineStatus({ phase: "stopping" });
 
             try {
+              await this.readOfflinePlaytime(ep, key);
               await endPlaying(ep, key);
             } finally {
               await this.releaseOfflineSession();
