@@ -107,6 +107,8 @@ export async function startDashboard({key, backend, port = 61110, logs = {}, ser
   let requests = 0, windowStart = Date.now(), readingLog = false, inviting = false;
   let inviteCount = 0, inviteWindow = Date.now();
   let readingAccounts = false;
+  let granting = false, grantCount = 0, grantWindow = Date.now();
+  let catalogCache = null, catalogAt = 0;
   const server = http.createServer(async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -114,7 +116,8 @@ export async function startDashboard({key, backend, port = 61110, logs = {}, ser
     if (!/^(127\.0\.0\.1|localhost|\[::1\]):\d+$/.test(req.headers.host ?? '') || req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) { res.writeHead(403).end(); return; }
     const createInvite = req.method === 'POST' && req.url === '/api/invites';
     const moderate = req.method === 'POST' && req.url === '/api/moderation';
-    if (req.method !== 'GET' && !createInvite && !moderate) { res.writeHead(405).end(); return; }
+    const grant = req.method === 'POST' && req.url === '/api/grant';
+    if (req.method !== 'GET' && !createInvite && !moderate && !grant) { res.writeHead(405).end(); return; }
     if (Date.now() - windowStart > 60000) { requests = 0; windowStart = Date.now(); }
     if (++requests > 300) { res.writeHead(429).end(); return; }
     if (req.url === '/') { res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(page); return; }
@@ -170,6 +173,52 @@ export async function startDashboard({key, backend, port = 61110, logs = {}, ser
         const response=await fetcher(new URL(`/undaunted/api/AccountRecovery/${encodeURIComponent(id)}`,target),{headers:{'x-undaunted-user-api-key':key},signal:AbortSignal.timeout(30000),redirect:'error'});
         res.writeHead(response.status).end(JSON.stringify(await response.json()));
       } catch {res.writeHead(503).end(JSON.stringify({error:'Account recovery unavailable.'}));}
+      return;
+    }
+    if (req.url === '/api/grant-catalog') {
+      if (catalogCache && Date.now() - catalogAt < 600000) { res.end(catalogCache); return; }
+      try {
+        const response = await fetcher(new URL('/undaunted/api/GrantCatalog', target), {headers: {'x-undaunted-user-api-key': key}, signal: AbortSignal.timeout(30000), redirect: 'error'});
+        if (!response.ok) throw new Error('unavailable');
+        const result = await response.json();
+        if (!Array.isArray(result.items)) throw new Error('invalid');
+        // Explicit projection: the picker shows only what it needs, whatever the backend adds later.
+        catalogCache = JSON.stringify({items: result.items.slice(0, 5000)
+          .filter(item => /^[A-Za-z0-9_]{1,128}$/.test(item?.catalogId || ''))
+          .map(item => ({catalogId: String(item.catalogId), kind: item.kind === 'instanced' ? 'instanced' : 'stacked', group: String(item.group || 'other').slice(0, 32)}))});
+        catalogAt = Date.now();
+        res.end(catalogCache);
+      } catch { res.writeHead(503).end(JSON.stringify({error: 'Item catalogue unavailable. Update the metagame if this route is missing.'})); }
+      return;
+    }
+    if (grant) {
+      if (req.headers.origin !== `http://${req.headers.host}`) { res.writeHead(403).end(); return; }
+      if (req.headers['content-type'] !== 'application/json') { res.writeHead(415).end(); return; }
+      if (Date.now() - grantWindow > 60000) { grantCount = 0; grantWindow = Date.now(); }
+      if (granting || grantCount >= 20) { res.writeHead(429).end(); return; }
+      granting = true;
+      let submitted = false;
+      try {
+        let text = '';
+        for await (const chunk of req) { text += chunk.toString('utf8'); if (Buffer.byteLength(text) > 16384) { res.writeHead(413).end(); return; } }
+        let body;
+        try { body = JSON.parse(text); } catch { res.writeHead(400).end(JSON.stringify({error: 'Invalid grant request.'})); return; }
+        // The reference is what makes a grant repeatable-safe, so it is checked as strictly as the
+        // account id: without a usable one a timed-out request could not be retried.
+        if (!body || !/^UID-[A-Za-z0-9-]{1,100}$/.test(body.accountId || '') || !/^[A-Za-z0-9_-]{1,64}$/.test(body.reference || '')
+          || !Array.isArray(body.items) || body.items.length < 1 || body.items.length > 64
+          || body.items.some(item => !/^[A-Za-z0-9_]{1,128}$/.test(item?.catalogId || '') || !Number.isInteger(item?.quantity) || item.quantity < 1 || item.quantity > 1000000)) {
+          res.writeHead(400).end(JSON.stringify({error: 'Invalid grant request.'})); return;
+        }
+        grantCount++;
+        submitted = true;
+        const response = await fetcher(new URL('/undaunted/api/GrantItems', target), {method: 'POST',
+          headers: {'x-undaunted-user-api-key': key, 'content-type': 'application/json'},
+          body: JSON.stringify({UserId: body.accountId, Reference: body.reference, Items: body.items.map(item => ({catalogId: item.catalogId, quantity: item.quantity}))}),
+          signal: AbortSignal.timeout(30000), redirect: 'error'});
+        res.writeHead(response.status).end(JSON.stringify(await response.json()));
+      } catch { if (!res.destroyed) res.writeHead(502).end(JSON.stringify({error: submitted ? 'Grant result unknown. Submit it again with the same reference: a repeat cannot hand out the items twice.' : 'Invalid grant request.'})); }
+      finally { granting = false; }
       return;
     }
     if (req.url?.startsWith('/api/accounts?')) {

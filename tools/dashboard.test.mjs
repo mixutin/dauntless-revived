@@ -83,6 +83,74 @@ test('moderation writes require owner authentication and same origin and never r
     assert.equal(writes,1);
   }finally{await new Promise(resolve=>server.close(resolve));}
 });
+test('item grants require owner authentication and same origin, and are bounded and retriable',async()=>{
+  const key='test-grant-owner-key';let grants=0,catalogueReads=0;
+  const server=await startDashboard({key,port:0,backend:'http://127.0.0.1:61000',fetcher:async(url,opts)=>{
+    if(url.pathname==='/undaunted/api/GrantCatalog'){catalogueReads++;return {ok:true,status:200,json:async()=>({items:[
+      {catalogId:'ORB_FLAME',kind:'stacked',group:'material',secret:'must not pass through'},
+      {catalogId:'not a catalog id',kind:'stacked',group:'material'}
+    ]})};}
+    if(url.pathname==='/undaunted/api/GrantItems'){
+      grants++;
+      const body=JSON.parse(opts.body);
+      assert.deepEqual(Object.keys(body).sort(),['Items','Reference','UserId']);
+      assert.equal(body.UserId,'UID-test');
+      assert.equal(body.Reference,'ticket-7');
+      assert.deepEqual(body.Items,[{catalogId:'ORB_FLAME',quantity:50}]);
+      return {status:200,json:async()=>({stacked:1,instanced:0,replayed:false})};
+    }
+    return {ok:true,json:async()=>({Users:[],players:[],instances:[],playersOnline:0})};
+  }});
+  try{
+    const base=`http://127.0.0.1:${server.address().port}`;
+    const owner={'x-dashboard-key':key,'content-type':'application/json',origin:base};
+    const good=JSON.stringify({accountId:'UID-test',reference:'ticket-7',items:[{catalogId:'ORB_FLAME',quantity:50}]});
+
+    assert.equal((await fetch(base+'/api/grant',{method:'POST',body:good})).status,401);
+    assert.equal((await fetch(base+'/api/grant',{method:'POST',headers:{'x-dashboard-key':key,'content-type':'application/json'},body:good})).status,403,'no origin');
+    assert.equal((await fetch(base+'/api/grant',{method:'POST',headers:{'x-dashboard-key':key,origin:base},body:good})).status,415);
+    assert.equal(grants,0);
+
+    // Nothing malformed reaches the backend.
+    for(const body of [
+      '{', '{}',
+      JSON.stringify({accountId:'not-a-uid',reference:'r',items:[{catalogId:'ORB_FLAME',quantity:1}]}),
+      JSON.stringify({accountId:'UID-test',reference:'',items:[{catalogId:'ORB_FLAME',quantity:1}]}),
+      JSON.stringify({accountId:'UID-test',reference:'bad ref',items:[{catalogId:'ORB_FLAME',quantity:1}]}),
+      JSON.stringify({accountId:'UID-test',reference:'r',items:[]}),
+      JSON.stringify({accountId:'UID-test',reference:'r',items:[{catalogId:'ORB FLAME',quantity:1}]}),
+      JSON.stringify({accountId:'UID-test',reference:'r',items:[{catalogId:'ORB_FLAME',quantity:0}]}),
+      JSON.stringify({accountId:'UID-test',reference:'r',items:[{catalogId:'ORB_FLAME',quantity:1.5}]}),
+      JSON.stringify({accountId:'UID-test',reference:'r',items:[{catalogId:'ORB_FLAME',quantity:1000001}]}),
+      JSON.stringify({accountId:'UID-test',reference:'r',items:Array.from({length:65},()=>({catalogId:'ORB_FLAME',quantity:1}))})
+    ]) assert.equal((await fetch(base+'/api/grant',{method:'POST',headers:owner,body})).status,400,body.slice(0,60));
+    assert.equal(grants,0);
+
+    assert.equal((await fetch(base+'/api/grant',{method:'POST',headers:owner,body:good})).status,200);
+    assert.equal(grants,1);
+
+    // The catalogue is projected to the fields the picker uses and cached after the first read.
+    const catalogue=await (await fetch(base+'/api/grant-catalog',{headers:{'x-dashboard-key':key}})).json();
+    assert.deepEqual(catalogue,{items:[{catalogId:'ORB_FLAME',kind:'stacked',group:'material'}]});
+    await fetch(base+'/api/grant-catalog',{headers:{'x-dashboard-key':key}});
+    assert.equal(catalogueReads,1,'cached');
+    assert.equal((await fetch(base+'/api/grant-catalog')).status,401);
+  }finally{await new Promise(resolve=>server.close(resolve));}
+});
+test('an ambiguous grant tells the owner to resend the same reference rather than a new one',async()=>{
+  const key='test-grant-ambiguous-key';
+  const server=await startDashboard({key,port:0,backend:'http://127.0.0.1:61000',fetcher:async(url,opts)=>{
+    if(opts?.method==='POST')throw new Error('connection reset');
+    return {ok:true,json:async()=>({Users:[],players:[],instances:[],playersOnline:0})};
+  }});
+  try{
+    const base=`http://127.0.0.1:${server.address().port}`;
+    const response=await fetch(base+'/api/grant',{method:'POST',headers:{'x-dashboard-key':key,'content-type':'application/json',origin:base},
+      body:JSON.stringify({accountId:'UID-test',reference:'ticket-9',items:[{catalogId:'ORB_FLAME',quantity:1}]})});
+    assert.equal(response.status,502);
+    assert.match((await response.json()).error,/same reference/);
+  }finally{await new Promise(resolve=>server.close(resolve));}
+});
 test('dashboard isolates owner data and only polls read routes', async () => {
   const routes = [];
   const key = 'test-owner-key-not-a-real-secret';

@@ -81,7 +81,12 @@ if (Test-Path -LiteralPath $P.Db) {
     $code = Invoke-DRNative -FilePath $node -Arguments @((Join-Path $PSScriptRoot 'lib\dr-db.js'), 'backup', $metaDir, $P.Db, (Join-Path $dest 'undaunted.db'), '--online', $P.DeployEnv) `
         -WorkingDirectory $P.Root -LogBase (Join-Path $P.Logs 'backup-db')
     if ($code -ne 0) {
-        Log "backup FAILED: the database copy did not pass its check (see $($P.Logs)\backup-db.err.log)"
+        # Any non-zero exit used to be reported as a failed integrity check, which sends you
+        # looking at the database when the usual cause is that the helper could not reach the
+        # metagame at all. Quote what it actually said.
+        $why = (Get-Content -LiteralPath (Join-Path $P.Logs 'backup-db.err.log') -ErrorAction SilentlyContinue | Where-Object { $_.Trim() } | Select-Object -Last 1)
+        if (-not $why) { $why = "exit $code, no error output" }
+        Log "backup FAILED: $why (see $($P.Logs)\backup-db.err.log)"
         Remove-Item -LiteralPath $dest -Recurse -Force -ErrorAction SilentlyContinue
         exit 1
     }
