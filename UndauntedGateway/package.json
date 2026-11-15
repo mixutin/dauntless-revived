@@ -13,7 +13,7 @@
     "test": "node -e \"require('fs').rmSync('build',{recursive:true,force:true})\" && tsc -p tsconfig.test.json && node --test --test-concurrency=1 \"build/test/*.test.js\""
   },
   "dependencies": {
-    "node-forge": "^1.4.0"
+    "node-forge": "^1.4.3"
   },
   "devDependencies": {
     "@types/node": "26.0.0",
